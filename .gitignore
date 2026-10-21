@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment Variables & Secrets
+.env
+.env.*
+
+# Local Database
+users.json
+
+# Raw recording files (optimized MP4s are included instead)
+*.MOV
+
+# System / logs
+*.log
+.DS_Store
+Thumbs.db
