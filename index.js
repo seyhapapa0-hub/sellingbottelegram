@@ -398,7 +398,7 @@ function getMainMenu(user) {
 ${ANIM.MELBET}  <b>QUICKACC ONLI  |  PAY 8BET</b>  ${ANIM.MELBET}
 ╚════════════════════════════╝
 
-${ANIM.WAVE} <b>សួស្តី</b> <a href="tg://user?id=${user.id}">${user.name}</a>!${isUserAdmin ? ` (👑 <b>Admin</b>)` : ''}
+${ANIM.WAVE} <b>សួស្តី</b> <a href="tg://user?id=${user.id}">${user.name}</a>!${isUserAdmin ? ` (👑 <b>អ្នកគ្រប់គ្រង</b>)` : ''}
 ${ANIM.SPARKLES} <i>សូមស្វាគមន៍មកកាន់ប្រព័ន្ធសេវាកម្មស្វ័យប្រវត្តិ 24/7!</i>
 
 ${ANIM.DOWN} <b>សូមជ្រើសរើសមុខងារដែលអ្នកចង់ប្រើប្រាស់៖</b>`;
@@ -454,7 +454,7 @@ ${ANIM.DOWN} <b>សូមជ្រើសរើសមុខងារដែលអ�
   if (isUserAdmin) {
     keyboard.push([
       {
-        text: `👑 ADMIN CONTROL PANEL`,
+        text: `👑 ផ្ទាំងគ្រប់គ្រង (ADMIN)`,
         callback_data: 'ap_home',
         icon_custom_emoji_id: BTN_ICONS.CROWN,
         style: 'success'
@@ -495,7 +495,7 @@ bot.use(async (ctx, next) => {
   // Admin Panel keeps working. Status is read from persistent storage.
   if (ctx.chat?.type === 'private' && !isAdmin(userId) && store.isBotClosed()) {
     if (ctx.callbackQuery) {
-      await ctx.answerCbQuery('⚠️ Bot is temporarily closed for maintenance.', { show_alert: true }).catch(() => { });
+      await ctx.answerCbQuery('⚠️ Bot ត្រូវបានបិទជាបណ្តោះអាសន្ន សម្រាប់ការថែទាំ។', { show_alert: true }).catch(() => { });
     }
     if (adminPanel) return adminPanel.showClosedScreen(ctx);
     return; // fail-closed: block if panel not ready
@@ -542,7 +542,7 @@ bot.start(async (ctx) => {
 bot.command('broadcast', async (ctx) => {
   await ctx.deleteMessage().catch(() => { });
   if (!isAdmin(ctx.from.id)) {
-    await ctx.replyWithHTML('⛔ <b>Access Denied. You are not authorized to use this panel.</b>').catch(() => { });
+    await ctx.replyWithHTML('⛔ <b>បដិសេធការចូល! អ្នកមិនមានសិទ្ធិប្រើប្រាស់ផ្ទាំងគ្រប់គ្រងនេះទេ។</b>').catch(() => { });
     return;
   }
   if (adminPanel) return adminPanel.openAnnouncementMenu(ctx);
@@ -551,7 +551,7 @@ bot.command('broadcast', async (ctx) => {
 // Legacy broadcast callback -> delegates to the Announcement Center (re-auth)
 bot.action('admin_broadcast_menu', async (ctx) => {
   if (!isAdmin(ctx.from.id)) {
-    await ctx.answerCbQuery('⛔ Access Denied. You are not authorized to use this panel.', { show_alert: true }).catch(() => { });
+    await ctx.answerCbQuery('⛔ បដិសេធការចូល! អ្នកមិនមានសិទ្ធិប្រើប្រាស់ផ្ទាំងគ្រប់គ្រងនេះទេ។', { show_alert: true }).catch(() => { });
     return;
   }
   await ctx.answerCbQuery().catch(() => { });

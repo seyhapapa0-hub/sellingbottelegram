@@ -19,7 +19,7 @@
 
 const PAGE_SIZE = 6;
 
-const DENY_TEXT = '⛔ Access Denied. You are not authorized to use this panel.';
+const DENY_TEXT = '⛔ បដិសេធការចូល! អ្នកមិនមានសិទ្ធិប្រើប្រាស់ផ្ទាំងគ្រប់គ្រងនេះទេ។';
 
 function escapeHtml(s) {
   return String(s == null ? '' : s)
@@ -45,34 +45,34 @@ function fmtDate(iso) {
 
 // Human-readable labels for statuses
 const TOPUP_STATUS_LABEL = {
-  paid: '🟡 Pending (awaiting admin)',
-  approved: '🟢 Approved',
-  rejected: '🔴 Rejected',
-  cancelled: '⚪ Cancelled'
+  paid: '🟡 កំពុងរង់ចាំ (រង់ចាំអ្នកគ្រប់គ្រង)',
+  approved: '🟢 អនុម័តរួច',
+  rejected: '🔴 បដិសេធ',
+  cancelled: '⚪ បានបោះបង់'
 };
 const WITHDRAW_STATUS_LABEL = {
-  pending: '🟡 Pending',
-  processing: '🔵 Processing',
-  completed: '🟢 Completed',
-  rejected: '🔴 Rejected',
-  cancelled: '⚪ Cancelled'
+  pending: '🟡 កំពុងរង់ចាំ',
+  processing: '🔵 កំពុងដំណើរការ',
+  completed: '🟢 ជោគជ័យ',
+  rejected: '🔴 បដិសេធ',
+  cancelled: '⚪ បានបោះបង់'
 };
 
 // Filter sets (code -> label). "all" always included.
 const TOPUP_FILTERS = [
-  ['all', '📋 All'],
-  ['paid', '🟡 Pending'],
-  ['approved', '🟢 Approved'],
-  ['rejected', '🔴 Rejected'],
-  ['cancelled', '⚪ Cancelled']
+  ['all', '📋 ទាំងអស់'],
+  ['paid', '🟡 រង់ចាំ'],
+  ['approved', '🟢 អនុម័ត'],
+  ['rejected', '🔴 បដិសេធ'],
+  ['cancelled', '⚪ បោះបង់']
 ];
 const WITHDRAW_FILTERS = [
-  ['all', '📋 All'],
-  ['pending', '🟡 Pending'],
-  ['processing', '🔵 Processing'],
-  ['completed', '🟢 Completed'],
-  ['rejected', '🔴 Rejected'],
-  ['cancelled', '⚪ Cancelled']
+  ['all', '📋 ទាំងអស់'],
+  ['pending', '🟡 រង់ចាំ'],
+  ['processing', '🔵 ដំណើរការ'],
+  ['completed', '🟢 ជោគជ័យ'],
+  ['rejected', '🔴 បដិសេធ'],
+  ['cancelled', '⚪ បោះបង់']
 ];
 
 function setupAdminPanel(bot, deps) {
@@ -132,16 +132,14 @@ function setupAdminPanel(bot, deps) {
     const text =
       `${ANIM.WARN} <b>សូមអភ័យទោស! Bot ត្រូវបានបិទជាបណ្តោះអាសន្ន</b>\n` +
       `${DIV}\n` +
-      `${ANIM.LOCK} <i>Sorry, this bot is temporarily closed by the administrator because ` +
-      `something is wrong or maintenance is in progress.</i>\n\n` +
-      `${ANIM.HOURGLASS} <b>Please try again later.</b>\n` +
+      `${ANIM.LOCK} <i>Bot ត្រូវបានបិទដោយអ្នកគ្រប់គ្រង ដោយសារមានបញ្ហា ` +
+      `ឬកំពុងធ្វើការថែទាំ។</i>\n\n` +
+      `${ANIM.HOURGLASS} <b>សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។</b>\n` +
       `${DIV}\n` +
-      `${ANIM.CHAT} Support: ${SUPPORT_USERNAME}`;
+      `${ANIM.CHAT} ជំនួយ: ${SUPPORT_USERNAME}`;
     const reply_markup = {
-      inline_keyboard: [[btn('💬 Support', null, 'primary')]]
+      inline_keyboard: [[{ text: '💬 ទាក់ទងជំនួយ', url: SUPPORT_LINK, style: 'primary', icon_custom_emoji_id: BTN_ICONS.CHAT }]]
     };
-    // Support button as URL
-    reply_markup.inline_keyboard = [[{ text: '💬 Contact Support', url: SUPPORT_LINK, style: 'primary', icon_custom_emoji_id: BTN_ICONS.CHAT }]];
     return showScreen(ctx, { text, reply_markup });
   }
 
@@ -151,21 +149,21 @@ function setupAdminPanel(bot, deps) {
   function panelMarkup() {
     return {
       inline_keyboard: [
-        [btn('📢 Send Announcement', 'ap_ann', 'success', BTN_ICONS.MEGAPHONE)],
+        [btn('📢 ផ្ញើសារជូនដំណឹង', 'ap_ann', 'success', BTN_ICONS.MEGAPHONE)],
         [
-          btn('👥 User Management', 'ap_users_p_0', 'primary', BTN_ICONS.CROWN),
-          btn('📜 User History', 'ap_hist_p_0', 'primary', BTN_ICONS.CHART)
+          btn('👥 គ្រប់គ្រងអ្នកប្រើប្រាស់', 'ap_users_p_0', 'primary', BTN_ICONS.CROWN),
+          btn('📜 ប្រវត្តិអ្នកប្រើប្រាស់', 'ap_hist_p_0', 'primary', BTN_ICONS.CHART)
         ],
         [
-          btn('💰 Top Up History', 'ap_tp_all_0', 'success', BTN_ICONS.DEPOSIT),
-          btn('💸 Withdraw History', 'ap_wdf_all_0', 'primary', BTN_ICONS.WITHDRAW)
+          btn('💰 ប្រវត្តិដាក់ប្រាក់', 'ap_tp_all_0', 'success', BTN_ICONS.DEPOSIT),
+          btn('💸 ប្រវត្តិដកប្រាក់', 'ap_wdf_all_0', 'primary', BTN_ICONS.WITHDRAW)
         ],
         [
-          btn('🔴 Close Bot', 'ap_close', 'danger', BTN_ICONS.CANCEL),
-          btn('🟢 Open Bot', 'ap_open', 'success', BTN_ICONS.SUCCESS)
+          btn('🔴 បិទ Bot', 'ap_close', 'danger', BTN_ICONS.CANCEL),
+          btn('🟢 បើក Bot', 'ap_open', 'success', BTN_ICONS.SUCCESS)
         ],
-        [btn('⚙️ Bot Settings', 'ap_settings', 'primary', BTN_ICONS.SHIELD)],
-        [btn('🔙 Back to Main Menu', 'ap_exit', 'primary', BTN_ICONS.BACK)]
+        [btn('⚙️ ការកំណត់ Bot', 'ap_settings', 'primary', BTN_ICONS.SHIELD)],
+        [btn('🔙 ត្រឡប់ទៅ Menu ចម្បង', 'ap_exit', 'primary', BTN_ICONS.BACK)]
       ]
     };
   }
@@ -174,15 +172,15 @@ function setupAdminPanel(bot, deps) {
     userStates.delete(ctx.from.id);
     const s = store.getSettings();
     const statusLine = s.maintenance
-      ? `${ANIM.WARN} <b>ស្ថានភាព Bot:</b> 🔴 <b>CLOSED (Maintenance)</b>`
-      : `${ANIM.SUCCESS} <b>ស្ថានភាព Bot:</b> 🟢 <b>OPEN</b>`;
+      ? `${ANIM.WARN} <b>ស្ថានភាព Bot:</b> 🔴 <b>បិទ (កំពុងថែទាំ)</b>`
+      : `${ANIM.SUCCESS} <b>ស្ថានភាព Bot:</b> 🟢 <b>បើក</b>`;
 
     const text =
-      `${ANIM.CROWN} <b>ADMIN CONTROL PANEL</b> ${ANIM.DIAMOND}\n` +
+      `${ANIM.CROWN} <b>ផ្ទាំងគ្រប់គ្រងសម្រាប់អ្នកគ្រប់គ្រង</b> ${ANIM.DIAMOND}\n` +
       `${DIV}\n` +
-      `${ANIM.SHIELD} <b>Secure Access</b> — Admin only\n` +
-      `${ANIM.ID} <b>Admin ID:</b> <code>${escapeHtml(ADMIN_ID)}</code>\n` +
-      `${ANIM.USER} <b>Registered Users:</b> <code>${usersDb.size}</code>\n` +
+      `${ANIM.SHIELD} <b>ចូលបានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះ</b>\n` +
+      `${ANIM.ID} <b>លេខសម្គាល់អ្នកគ្រប់គ្រង:</b> <code>${escapeHtml(ADMIN_ID)}</code>\n` +
+      `${ANIM.USER} <b>អ្នកប្រើប្រាស់ដែលបានចុះឈ្មោះ:</b> <code>${usersDb.size}</code> នាក់\n` +
       `${statusLine}\n` +
       `${DIV}\n` +
       `${ANIM.DOWN} <i>សូមជ្រើសរើសមុខងារដែលអ្នកចង់គ្រប់គ្រង៖</i>`;
@@ -196,16 +194,16 @@ function setupAdminPanel(bot, deps) {
   function openAnnouncementMenu(ctx) {
     userStates.delete(ctx.from.id);
     const text =
-      `${ANIM.MEGAPHONE} <b>ANNOUNCEMENT CENTER</b>\n` +
+      `${ANIM.MEGAPHONE} <b>មជ្ឈមណ្ឌលផ្ញើសារជូនដំណឹង</b>\n` +
       `${DIV}\n` +
-      `${ANIM.USER} <b>Registered Users:</b> <code>${usersDb.size}</code>\n\n` +
+      `${ANIM.USER} <b>អ្នកប្រើប្រាស់ដែលបានចុះឈ្មោះ:</b> <code>${usersDb.size}</code> នាក់\n\n` +
       `${ANIM.DOWN} <i>សូមជ្រើសរើសប្រភេទការផ្ញើសារ៖</i>`;
     const reply_markup = {
       inline_keyboard: [
-        [btn('📣 Broadcast to All Users', 'ap_ann_all', 'success', BTN_ICONS.MEGAPHONE)],
-        [btn('👤 Send to One User', 'ap_ann_one', 'primary', BTN_ICONS.CROWN)],
-        [btn('📊 Announcement History', 'ap_ann_hist_0', 'primary', BTN_ICONS.CHART)],
-        [btn('🔙 Back', 'ap_home', 'primary', BTN_ICONS.BACK)]
+        [btn('📣 ផ្សាយទៅអ្នកប្រើប្រាស់ទាំងអស់', 'ap_ann_all', 'success', BTN_ICONS.MEGAPHONE)],
+        [btn('👤 ផ្ញើទៅអ្នកប្រើម្នាក់', 'ap_ann_one', 'primary', BTN_ICONS.CROWN)],
+        [btn('📊 ប្រវត្តិការផ្ញើសារ', 'ap_ann_hist_0', 'primary', BTN_ICONS.CHART)],
+        [btn('🔙 ត្រឡប់ក្រោយ', 'ap_home', 'primary', BTN_ICONS.BACK)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -214,13 +212,13 @@ function setupAdminPanel(bot, deps) {
   function promptBroadcastMessage(ctx) {
     userStates.set(ctx.from.id, { state: 'AP_ANN_BROADCAST' });
     const text =
-      `${ANIM.MEGAPHONE} <b>Broadcast to ALL Users</b>\n` +
+      `${ANIM.MEGAPHONE} <b>ផ្សាយទៅអ្នកប្រើប្រាស់ទាំងអស់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.USER} <b>Recipients:</b> <code>${usersDb.size}</code> registered users\n\n` +
+      `${ANIM.USER} <b>អ្នកទទួល:</b> <code>${usersDb.size}</code> នាក់\n\n` +
       `${ANIM.CHAT} <b>សូមផ្ញើសារ / រូបភាព / វីដេអូ / ឯកសារ ដែលអ្នកចង់ផ្សាយ៖</b>\n` +
-      `<i>(Text, Photo, Video, or Document — caption & formatting are preserved)</i>`;
+      `<i>(អត្ថបទ រូបភាព វីដេអូ ឬឯកសារ — ពាក្យពណ៌នា និងទ្រង់ទ្រាយនឹងរក្សាដដែល)</i>`;
     const reply_markup = {
-      inline_keyboard: [[btn('❌ Cancel', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]]
+      inline_keyboard: [[btn('❌ បោះបង់', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]]
     };
     return showScreen(ctx, { text, reply_markup });
   }
@@ -228,13 +226,13 @@ function setupAdminPanel(bot, deps) {
   function promptSingleUser(ctx) {
     userStates.set(ctx.from.id, { state: 'AP_ANN_ONE_USER' });
     const text =
-      `${ANIM.CROWN} <b>Send to One User</b>\n` +
+      `${ANIM.CROWN} <b>ផ្ញើទៅអ្នកប្រើម្នាក់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.CHAT} <b>សូមផ្ញើ Username របស់អ្នកប្រើប្រាស់ (មាន ឬគ្មាន @ ក៏បាន)៖</b>\n` +
-      `<i>Example:</i> <code>@username</code> <i>or</i> <code>username</code>\n\n` +
-      `${ANIM.BULB} <i>ឬអ្នកអាចផ្ញើ Telegram ID ជាលេខផ្ទាល់ក៏បាន។</i>`;
+      `${ANIM.CHAT} <b>សូមផ្ញើឈ្មោះអ្នកប្រើ (Username) ដោយមាន ឬគ្មាន @ ក៏បាន៖</b>\n` +
+      `<i>ឧទាហរណ៍:</i> <code>@username</code> <i>ឬ</i> <code>username</code>\n\n` +
+      `${ANIM.BULB} <i>ឬអ្នកអាចផ្ញើលេខ Telegram ID ជាលេខផ្ទាល់ក៏បាន។</i>`;
     const reply_markup = {
-      inline_keyboard: [[btn('❌ Cancel', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]]
+      inline_keyboard: [[btn('❌ បោះបង់', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]]
     };
     return showScreen(ctx, { text, reply_markup });
   }
@@ -265,12 +263,12 @@ function setupAdminPanel(bot, deps) {
       const t =
         `${ANIM.WARN} <b>រកមិនឃើញអ្នកប្រើប្រាស់នេះទេ!</b>\n` +
         `${DIV}\n` +
-        `${ANIM.CROSS} <i>Username / ID "<code>${escapeHtml(text)}</code>" is not in the registered user database.</i>\n` +
-        `<i>User must have started the bot at least once.</i>`;
+        `${ANIM.CROSS} <i>ឈ្មោះ / លេខ "<code>${escapeHtml(text)}</code>" មិនមានក្នុងបញ្ជីអ្នកប្រើប្រាស់ទេ។</i>\n` +
+        `<i>អ្នកប្រើប្រាស់ត្រូវតែធ្លាប់ចុច Start Bot យ៉ាងតិចម្តង។</i>`;
       const reply_markup = {
         inline_keyboard: [
-          [btn('🔁 Try Again', 'ap_ann_one', 'primary', BTN_ICONS.REFRESH)],
-          [btn('🔙 Back', 'ap_ann', 'primary', BTN_ICONS.BACK)]
+          [btn('🔁 ព្យាយាមម្តងទៀត', 'ap_ann_one', 'primary', BTN_ICONS.REFRESH)],
+          [btn('🔙 ត្រឡប់ក្រោយ', 'ap_ann', 'primary', BTN_ICONS.BACK)]
         ]
       };
       await showScreen(ctx, { text: t, reply_markup });
@@ -285,15 +283,15 @@ function setupAdminPanel(bot, deps) {
     userStates.set(userId, { state: 'AP_ANN_ONE_MSG', target });
 
     const t =
-      `${ANIM.CROWN} <b>Recipient Found</b>\n` +
+      `${ANIM.CROWN} <b>រកឃើញអ្នកទទួល</b>\n` +
       `${DIV}\n` +
-      `${ANIM.USER} <b>Name:</b> ${escapeHtml(target.displayName)}\n` +
-      `${ANIM.ID} <b>Telegram ID:</b> <code>${target.userId}</code>\n` +
-      `${ANIM.CHAT} <b>Username:</b> ${escapeHtml(target.username || '-')}\n` +
+      `${ANIM.USER} <b>ឈ្មោះ:</b> ${escapeHtml(target.displayName)}\n` +
+      `${ANIM.ID} <b>លេខ Telegram ID:</b> <code>${target.userId}</code>\n` +
+      `${ANIM.CHAT} <b>ឈ្មោះអ្នកប្រើ:</b> ${escapeHtml(target.username || '-')}\n` +
       `${DIV}\n` +
       `${ANIM.DOWN} <b>សូមផ្ញើសារ / មេឌៀ ដែលអ្នកចង់ផ្ញើទៅអ្នកប្រើប្រាស់នេះ៖</b>`;
     const reply_markup = {
-      inline_keyboard: [[btn('❌ Cancel', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]]
+      inline_keyboard: [[btn('❌ បោះបង់', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]]
     };
     await showScreen(ctx, { text: t, reply_markup });
     return true;
@@ -326,11 +324,11 @@ function setupAdminPanel(bot, deps) {
     });
 
     const recipientLine = annType === 'single' && target
-      ? `${ANIM.CROWN} <b>Recipient:</b> ${escapeHtml(target.displayName)} (<code>${target.userId}</code>)`
-      : `${ANIM.USER} <b>Recipients:</b> <code>${usersDb.size}</code> registered users`;
+      ? `${ANIM.CROWN} <b>អ្នកទទួល:</b> ${escapeHtml(target.displayName)} (<code>${target.userId}</code>)`
+      : `${ANIM.USER} <b>អ្នកទទួល:</b> <code>${usersDb.size}</code> នាក់`;
 
     const text =
-      `${ANIM.MEGAPHONE} <b>PREVIEW — Confirm before sending</b>\n` +
+      `${ANIM.MEGAPHONE} <b>មើលជាមុន — សូមបញ្ជាក់មុននឹងផ្ញើ</b>\n` +
       `${DIV}\n` +
       `${recipientLine}\n` +
       `${DIV}\n` +
@@ -338,10 +336,10 @@ function setupAdminPanel(bot, deps) {
 
     const reply_markup = {
       inline_keyboard: [
-        [btn('✅ Confirm & Send', 'ap_ann_confirm', 'success', BTN_ICONS.SUCCESS)],
+        [btn('✅ បញ្ជាក់ & ផ្ញើ', 'ap_ann_confirm', 'success', BTN_ICONS.SUCCESS)],
         [
-          btn('✏️ Edit', 'ap_ann_edit', 'primary', BTN_ICONS.EDIT),
-          btn('❌ Cancel', 'ap_ann_cancel', 'danger', BTN_ICONS.CANCEL)
+          btn('✏️ កែសារ', 'ap_ann_edit', 'primary', BTN_ICONS.EDIT),
+          btn('❌ បោះបង់', 'ap_ann_cancel', 'danger', BTN_ICONS.CANCEL)
         ]
       ]
     };
@@ -354,10 +352,10 @@ function setupAdminPanel(bot, deps) {
     const userId = ctx.from.id;
     const st = userStates.get(userId);
     if (!st || st.state !== 'AP_ANN_PREVIEW') {
-      await ack(ctx, '⚠️ Session expired.');
+      await ack(ctx, '⚠️ សម័យបានផុតកំណត់។');
       return openAnnouncementMenu(ctx);
     }
-    await ack(ctx, '🚀 Sending...');
+    await ack(ctx, '🚀 កំពុងផ្ញើ...');
 
     // Remove the preview copy to keep the chat clean
     if (st.previewMsgId) {
@@ -390,7 +388,7 @@ function setupAdminPanel(bot, deps) {
     const report = { total, sent: 0, failed: 0, blocked: 0, invalid: 0, rateLimited: 0, otherErrors: 0 };
 
     const progress = await ctx.replyWithHTML(
-      `${ANIM.REFRESH} <b>កំពុងផ្ញើសារ...</b> <code>0/${total}</code>`
+      `${ANIM.REFRESH} <b>កំពុងផ្ញើសារ...</b> <code>0/${total}</code> នាក់`
     ).catch(() => null);
 
     let processed = 0;
@@ -427,7 +425,7 @@ function setupAdminPanel(bot, deps) {
       if (progress && processed % 20 === 0) {
         await ctx.telegram.editMessageText(
           progress.chat.id, progress.message_id, undefined,
-          `${ANIM.REFRESH} <b>កំពុងផ្ញើសារ...</b> <code>${processed}/${total}</code>\n✅ ${report.sent}   ⚠️ ${report.failed}`,
+          `${ANIM.REFRESH} <b>កំពុងផ្ញើសារ...</b> <code>${processed}/${total}</code> នាក់\n✅ ${report.sent}   ⚠️ ${report.failed}`,
           { parse_mode: 'HTML' }
         ).catch(() => { });
       }
@@ -455,23 +453,23 @@ function setupAdminPanel(bot, deps) {
 
   function showReport(ctx, st, report) {
     const isSingle = st.annType === 'single';
-    const title = isSingle ? 'MESSAGE SENT' : 'BROADCAST COMPLETED';
+    const title = isSingle ? 'សារត្រូវបានផ្ញើ' : 'ការផ្សាយបានបញ្ចប់';
     const text =
       `${ANIM.PARTY} <b>${title}</b>\n` +
       `${DIV}\n` +
-      `${ANIM.USER} <b>Total recipients:</b> <code>${report.total}</code>\n` +
-      `${ANIM.SUCCESS} <b>Successfully sent:</b> <code>${report.sent}</code>\n` +
-      `${ANIM.CROSS} <b>Failed:</b> <code>${report.failed}</code>\n` +
-      `${ANIM.LOCK} <b>Blocked users:</b> <code>${report.blocked}</code>\n` +
-      `${ANIM.WARN} <b>Invalid chat IDs:</b> <code>${report.invalid}</code>\n` +
-      `${ANIM.HOURGLASS} <b>Rate-limit retries:</b> <code>${report.rateLimited}</code>\n` +
-      `${ANIM.ID} <b>Other errors:</b> <code>${report.otherErrors}</code>\n` +
+      `${ANIM.USER} <b>អ្នកទទួលសរុប:</b> <code>${report.total}</code>\n` +
+      `${ANIM.SUCCESS} <b>ផ្ញើជោគជ័យ:</b> <code>${report.sent}</code>\n` +
+      `${ANIM.CROSS} <b>បរាជ័យ:</b> <code>${report.failed}</code>\n` +
+      `${ANIM.LOCK} <b>អ្នកប្រើបានប្លុក Bot:</b> <code>${report.blocked}</code>\n` +
+      `${ANIM.WARN} <b>លេខ Chat មិនត្រឹមត្រូវ:</b> <code>${report.invalid}</code>\n` +
+      `${ANIM.HOURGLASS} <b>ការព្យាយាមឡើងវិញ (ដែនកំណត់ល្បឿន):</b> <code>${report.rateLimited}</code>\n` +
+      `${ANIM.ID} <b>កំហុសផ្សេងទៀត:</b> <code>${report.otherErrors}</code>\n` +
       `${DIV}`;
     const reply_markup = {
       inline_keyboard: [
-        [btn('📊 Announcement History', 'ap_ann_hist_0', 'primary', BTN_ICONS.CHART)],
-        [btn('🔙 Announcement Center', 'ap_ann', 'primary', BTN_ICONS.BACK)],
-        [btn('🏠 Admin Panel', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]
+        [btn('📊 ប្រវត្តិការផ្ញើសារ', 'ap_ann_hist_0', 'primary', BTN_ICONS.CHART)],
+        [btn('🔙 មជ្ឈមណ្ឌលផ្ញើសារ', 'ap_ann', 'primary', BTN_ICONS.BACK)],
+        [btn('🏠 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -486,8 +484,8 @@ function setupAdminPanel(bot, deps) {
     if (st?.annType === 'single' && st.target) {
       userStates.set(ctx.from.id, { state: 'AP_ANN_ONE_MSG', target: st.target });
       return showScreen(ctx, {
-        text: `${ANIM.EDIT || ANIM.CHAT} <b>សូមផ្ញើសារថ្មីម្តងទៀត៖</b>`,
-        reply_markup: { inline_keyboard: [[btn('❌ Cancel', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]] }
+        text: `${ANIM.CHAT} <b>សូមផ្ញើសារថ្មីម្តងទៀត៖</b>`,
+        reply_markup: { inline_keyboard: [[btn('❌ បោះបង់', 'ap_ann', 'danger', BTN_ICONS.CANCEL)]] }
       });
     }
     return promptBroadcastMessage(ctx);
@@ -509,12 +507,12 @@ function setupAdminPanel(bot, deps) {
     const p = Math.min(Math.max(0, page), totalPages - 1);
     const slice = list.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE);
 
-    let text = `${ANIM.CHART} <b>ANNOUNCEMENT HISTORY</b>\n${DIV}\n`;
+    let text = `${ANIM.CHART} <b>ប្រវត្តិការផ្ញើសារ</b>\n${DIV}\n`;
     if (list.length === 0) {
       text += `\n<i>${ANIM.WARN} មិនទាន់មានប្រវត្តិផ្សាយសារនៅឡើយទេ។</i>\n`;
     } else {
       slice.forEach((a) => {
-        const typeLabel = a.type === 'single' ? `👤 Single → ${escapeHtml(a.targetUsername || a.targetUserId || '')}` : '📣 Broadcast';
+        const typeLabel = a.type === 'single' ? `👤 ផ្ញើម្នាក់ → ${escapeHtml(a.targetUsername || a.targetUserId || '')}` : '📣 ផ្សាយទាំងអស់';
         const r = a.report || {};
         text +=
           `\n${ANIM.PIN} <b>${typeLabel}</b>\n` +
@@ -523,14 +521,14 @@ function setupAdminPanel(bot, deps) {
           `   ✅ <code>${r.sent || 0}</code>  ⚠️ <code>${r.failed || 0}</code>  👥 <code>${r.total || 0}</code>\n`;
       });
     }
-    text += `${DIV}\n<i>Page ${p + 1}/${totalPages}</i>`;
+    text += `${DIV}\n<i>ទំព័រ ${p + 1}/${totalPages}</i>`;
 
     const nav = [];
-    if (p > 0) nav.push(btn('⬅️ Prev', `ap_ann_hist_${p - 1}`, 'primary', BTN_ICONS.BACK));
-    if (p < totalPages - 1) nav.push(btn('Next ➡️', `ap_ann_hist_${p + 1}`, 'primary'));
+    if (p > 0) nav.push(btn('⬅️ មុន', `ap_ann_hist_${p - 1}`, 'primary', BTN_ICONS.BACK));
+    if (p < totalPages - 1) nav.push(btn('បន្ទាប់ ➡️', `ap_ann_hist_${p + 1}`, 'primary'));
     const reply_markup = { inline_keyboard: [] };
     if (nav.length) reply_markup.inline_keyboard.push(nav);
-    reply_markup.inline_keyboard.push([btn('🔙 Back', 'ap_ann', 'primary', BTN_ICONS.BACK)]);
+    reply_markup.inline_keyboard.push([btn('🔙 ត្រឡប់ក្រោយ', 'ap_ann', 'primary', BTN_ICONS.BACK)]);
 
     return showScreen(ctx, { text, reply_markup });
   }
@@ -540,15 +538,15 @@ function setupAdminPanel(bot, deps) {
   // =========================================================================
   function confirmClose(ctx) {
     const text =
-      `${ANIM.WARN} <b>CLOSE BOT — Confirmation</b>\n` +
+      `${ANIM.WARN} <b>បិទ Bot — ការបញ្ជាក់</b>\n` +
       `${DIV}\n` +
       `${ANIM.LOCK} <i>នៅពេលបិទ Bot៖ អ្នកប្រើប្រាស់ធម្មតានឹងមិនអាចដាក់ប្រាក់ ដកប្រាក់ ឬប្រើមុខងារផ្សេងៗបានទេ។</i>\n\n` +
-      `${ANIM.SHIELD} <i>Admin នៅតែអាចប្រើ Admin Panel បានធម្មតា។</i>\n` +
+      `${ANIM.SHIELD} <i>អ្នកគ្រប់គ្រងនៅតែអាចប្រើផ្ទាំងគ្រប់គ្រងបានធម្មតា។</i>\n` +
       `${DIV}\n<b>តើអ្នកប្រាកដជាចង់បិទ Bot មែនទេ?</b>`;
     const reply_markup = {
       inline_keyboard: [
-        [btn('🔴 Yes, Close Bot', 'ap_close_yes', 'danger', BTN_ICONS.CANCEL)],
-        [btn('🔙 Back', 'ap_home', 'primary', BTN_ICONS.BACK)]
+        [btn('🔴 បាទ/ចាស បិទ Bot', 'ap_close_yes', 'danger', BTN_ICONS.CANCEL)],
+        [btn('🔙 ត្រឡប់ក្រោយ', 'ap_home', 'primary', BTN_ICONS.BACK)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -557,15 +555,15 @@ function setupAdminPanel(bot, deps) {
   function doClose(ctx) {
     store.closeBot(ctx.from.id);
     const text =
-      `${ANIM.SUCCESS} <b>Bot ត្រូវបានបិទរួចរាល់ (CLOSED)</b>\n` +
+      `${ANIM.SUCCESS} <b>Bot ត្រូវបានបិទរួចរាល់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.WARN} <b>ស្ថានភាព:</b> 🔴 <b>CLOSED (Maintenance)</b>\n` +
+      `${ANIM.WARN} <b>ស្ថានភាព:</b> 🔴 <b>បិទ (កំពុងថែទាំ)</b>\n` +
       `${ANIM.HOURGLASS} <i>អ្នកប្រើប្រាស់ធម្មតាឥឡូវត្រូវបានរារាំងពីការធ្វើប្រតិបត្តិការ។</i>\n` +
       `${DIV}`;
     const reply_markup = {
       inline_keyboard: [
-        [btn('🟢 Open Bot', 'ap_open', 'success', BTN_ICONS.SUCCESS)],
-        [btn('🏠 Admin Panel', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]
+        [btn('🟢 បើក Bot', 'ap_open', 'success', BTN_ICONS.SUCCESS)],
+        [btn('🏠 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -573,14 +571,14 @@ function setupAdminPanel(bot, deps) {
 
   function confirmOpen(ctx) {
     const text =
-      `${ANIM.SUCCESS} <b>OPEN BOT — Confirmation</b>\n` +
+      `${ANIM.SUCCESS} <b>បើក Bot — ការបញ្ជាក់</b>\n` +
       `${DIV}\n` +
       `${ANIM.SPARKLES} <i>នៅពេលបើក Bot ឡើងវិញ៖ អ្នកប្រើប្រាស់ទាំងអស់នឹងអាចប្រើមុខងារធម្មតាវិញ។</i>\n` +
       `${DIV}\n<b>តើអ្នកប្រាកដជាចង់បើក Bot មែនទេ?</b>`;
     const reply_markup = {
       inline_keyboard: [
-        [btn('🟢 Yes, Open Bot', 'ap_open_yes', 'success', BTN_ICONS.SUCCESS)],
-        [btn('🔙 Back', 'ap_home', 'primary', BTN_ICONS.BACK)]
+        [btn('🟢 បាទ/ចាស បើក Bot', 'ap_open_yes', 'success', BTN_ICONS.SUCCESS)],
+        [btn('🔙 ត្រឡប់ក្រោយ', 'ap_home', 'primary', BTN_ICONS.BACK)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -589,13 +587,13 @@ function setupAdminPanel(bot, deps) {
   function doOpen(ctx) {
     store.openBot(ctx.from.id);
     const text =
-      `${ANIM.PARTY} <b>Bot ត្រូវបានបើករួចរាល់ (OPEN)</b>\n` +
+      `${ANIM.PARTY} <b>Bot ត្រូវបានបើករួចរាល់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.SUCCESS} <b>ស្ថានភាព:</b> 🟢 <b>OPEN</b>\n` +
+      `${ANIM.SUCCESS} <b>ស្ថានភាព:</b> 🟢 <b>បើក</b>\n` +
       `${ANIM.SPARKLES} <i>អ្នកប្រើប្រាស់ទាំងអស់អាចប្រើប្រាស់ Bot បានធម្មតាឡើងវិញហើយ។</i>\n` +
       `${DIV}`;
     const reply_markup = {
-      inline_keyboard: [[btn('🏠 Admin Panel', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]]
+      inline_keyboard: [[btn('🏠 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]]
     };
     return showScreen(ctx, { text, reply_markup });
   }
@@ -614,10 +612,10 @@ function setupAdminPanel(bot, deps) {
     const p = Math.min(Math.max(0, page), totalPages - 1);
     const slice = list.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE);
 
-    const title = forHistory ? '📜 USER HISTORY' : '👥 USER MANAGEMENT';
+    const title = forHistory ? '📜 ប្រវត្តិអ្នកប្រើប្រាស់' : '👥 គ្រប់គ្រងអ្នកប្រើប្រាស់';
     let text = `${ANIM.CROWN} <b>${title}</b>\n${DIV}\n`;
-    text += `${ANIM.USER} <b>Total registered:</b> <code>${list.length}</code>\n${DIV}\n`;
-    text += `<i>សូមជ្រើសរើសអ្នកប្រើប្រាស់ ឬ ស្វែងរក៖</i>`;
+    text += `${ANIM.USER} <b>ចំនួនចុះឈ្មោះសរុប:</b> <code>${list.length}</code> នាក់\n${DIV}\n`;
+    text += `<i>សូមជ្រើសរើសអ្នកប្រើប្រាស់ ឬស្វែងរក៖</i>`;
 
     const prefix = forHistory ? 'ap_uhist_' : 'ap_user_';
     const rows = slice.map(u => [btn(
@@ -628,15 +626,15 @@ function setupAdminPanel(bot, deps) {
 
     const nav = [];
     const navBase = forHistory ? 'ap_hist_p_' : 'ap_users_p_';
-    if (p > 0) nav.push(btn('⬅️ Prev', `${navBase}${p - 1}`, 'primary', BTN_ICONS.BACK));
-    if (p < totalPages - 1) nav.push(btn('Next ➡️', `${navBase}${p + 1}`, 'primary'));
+    if (p > 0) nav.push(btn('⬅️ មុន', `${navBase}${p - 1}`, 'primary', BTN_ICONS.BACK));
+    if (p < totalPages - 1) nav.push(btn('បន្ទាប់ ➡️', `${navBase}${p + 1}`, 'primary'));
 
     const reply_markup = { inline_keyboard: rows };
-    reply_markup.inline_keyboard.push([btn('🔍 Search User', 'ap_user_search', 'success', BTN_ICONS.CHART)]);
+    reply_markup.inline_keyboard.push([btn('🔍 ស្វែងរកអ្នកប្រើ', 'ap_user_search', 'success', BTN_ICONS.CHART)]);
     if (nav.length) reply_markup.inline_keyboard.push(nav);
-    reply_markup.inline_keyboard.push([btn('🔙 Admin Panel', 'ap_home', 'primary', BTN_ICONS.BACK)]);
+    reply_markup.inline_keyboard.push([btn('🔙 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.BACK)]);
 
-    text += `\n${DIV}\n<i>Page ${p + 1}/${totalPages}</i>`;
+    text += `\n${DIV}\n<i>ទំព័រ ${p + 1}/${totalPages}</i>`;
     userStates.set(ctx.from.id, { state: forHistory ? 'AP_HIST_BROWSE' : 'AP_USER_BROWSE' });
     return showScreen(ctx, { text, reply_markup });
   }
@@ -644,12 +642,12 @@ function setupAdminPanel(bot, deps) {
   function promptUserSearch(ctx) {
     userStates.set(ctx.from.id, { state: 'AP_USER_SEARCH' });
     const text =
-      `${ANIM.CHART} <b>Search User</b>\n` +
+      `${ANIM.CHART} <b>ស្វែងរកអ្នកប្រើ</b>\n` +
       `${DIV}\n` +
-      `${ANIM.CHAT} <b>សូមផ្ញើ Username ឬ Telegram ID៖</b>\n` +
-      `<i>Example:</i> <code>@username</code> <i>or</i> <code>123456789</code>`;
+      `${ANIM.CHAT} <b>សូមផ្ញើឈ្មោះអ្នកប្រើ (Username) ឬលេខ Telegram ID៖</b>\n` +
+      `<i>ឧទាហរណ៍:</i> <code>@username</code> <i>ឬ</i> <code>123456789</code>`;
     const reply_markup = {
-      inline_keyboard: [[btn('🔙 Back', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]]
+      inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]]
     };
     return showScreen(ctx, { text, reply_markup });
   }
@@ -660,11 +658,11 @@ function setupAdminPanel(bot, deps) {
     if (!user) {
       const t =
         `${ANIM.WARN} <b>រកមិនឃើញអ្នកប្រើប្រាស់!</b>\n${DIV}\n` +
-        `${ANIM.CROSS} <i>"<code>${escapeHtml(text)}</code>" is not registered.</i>`;
+        `${ANIM.CROSS} <i>"<code>${escapeHtml(text)}</code>" មិនបានចុះឈ្មោះទេ។</i>`;
       const reply_markup = {
         inline_keyboard: [
-          [btn('🔁 Try Again', 'ap_user_search', 'primary', BTN_ICONS.REFRESH)],
-          [btn('🔙 Back', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]
+          [btn('🔁 ព្យាយាមម្តងទៀត', 'ap_user_search', 'primary', BTN_ICONS.REFRESH)],
+          [btn('🔙 ត្រឡប់ក្រោយ', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]
         ]
       };
       await showScreen(ctx, { text: t, reply_markup });
@@ -679,30 +677,30 @@ function setupAdminPanel(bot, deps) {
     const u = usersDb.get(Number(id));
     if (!u) {
       return showScreen(ctx, {
-        text: `${ANIM.WARN} <b>User not found.</b>`,
-        reply_markup: { inline_keyboard: [[btn('🔙 Back', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]] }
+        text: `${ANIM.WARN} <b>រកមិនឃើញអ្នកប្រើប្រាស់។</b>`,
+        reply_markup: { inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]] }
       });
     }
     const stats = store.getUserStats(u.id);
     const text =
-      `${ANIM.CROWN} <b>USER DETAILS</b>\n` +
+      `${ANIM.CROWN} <b>ព័ត៌មានអ្នកប្រើប្រាស់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.USER} <b>Name:</b> ${escapeHtml(u.name || 'User')}\n` +
-      `${ANIM.CHAT} <b>Username:</b> ${escapeHtml(u.username || '-')}\n` +
-      `${ANIM.ID} <b>Telegram ID:</b> <code>${u.id}</code>\n` +
-      `${ANIM.CALENDAR} <b>Registered:</b> <code>${escapeHtml(u.joinedAt || '-')}</code>\n` +
-      `${ANIM.MONEY} <b>Balance:</b> <code>$${Number(u.balance || 0).toFixed(2)} USD</code>\n` +
+      `${ANIM.USER} <b>ឈ្មោះ:</b> ${escapeHtml(u.name || 'User')}\n` +
+      `${ANIM.CHAT} <b>ឈ្មោះអ្នកប្រើ:</b> ${escapeHtml(u.username || '-')}\n` +
+      `${ANIM.ID} <b>លេខ Telegram ID:</b> <code>${u.id}</code>\n` +
+      `${ANIM.CALENDAR} <b>ថ្ងៃចុះឈ្មោះ:</b> <code>${escapeHtml(u.joinedAt || '-')}</code>\n` +
+      `${ANIM.MONEY} <b>សមតុល្យ:</b> <code>$${Number(u.balance || 0).toFixed(2)} USD</code>\n` +
       `${DIV}\n` +
-      `${ANIM.DEPOSIT} <b>Total top-ups (approved):</b> <code>$${stats.totalTopupUsd.toFixed(2)}</code> (${stats.topupCount} tx)\n` +
-      `${ANIM.WITHDRAW} <b>Withdrawals:</b> <code>${stats.withdrawCount}</code> (${stats.totalWithdrawCount} completed)\n` +
-      `${ANIM.HOURGLASS} <b>Pending:</b> <code>${stats.pending}</code>   ✅ <b>Completed:</b> <code>${stats.completed}</code>\n` +
-      `${ANIM.CROSS} <b>Rejected:</b> <code>${stats.rejected}</code>   ⚪ <b>Cancelled:</b> <code>${stats.cancelled}</code>\n` +
+      `${ANIM.DEPOSIT} <b>ដាក់ប្រាក់សរុប (អនុម័ត):</b> <code>$${stats.totalTopupUsd.toFixed(2)}</code> (${stats.topupCount} ដង)\n` +
+      `${ANIM.WITHDRAW} <b>ដកប្រាក់:</b> <code>${stats.withdrawCount}</code> ដង (${stats.totalWithdrawCount} ជោគជ័យ)\n` +
+      `${ANIM.HOURGLASS} <b>កំពុងរង់ចាំ:</b> <code>${stats.pending}</code>   ✅ <b>ជោគជ័យ:</b> <code>${stats.completed}</code>\n` +
+      `${ANIM.CROSS} <b>បដិសេធ:</b> <code>${stats.rejected}</code>   ⚪ <b>បោះបង់:</b> <code>${stats.cancelled}</code>\n` +
       `${DIV}`;
     const reply_markup = {
       inline_keyboard: [
-        [btn('📜 Full History', `ap_uhist_${u.id}_0`, 'success', BTN_ICONS.CHART)],
-        [btn('👤 Send Message', `ap_msg_${u.id}`, 'primary', BTN_ICONS.MEGAPHONE)],
-        [btn('🔙 Back to Users', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]
+        [btn('📜 ប្រវត្តិទាំងអស់', `ap_uhist_${u.id}_0`, 'success', BTN_ICONS.CHART)],
+        [btn('👤 ផ្ញើសារ', `ap_msg_${u.id}`, 'primary', BTN_ICONS.MEGAPHONE)],
+        [btn('🔙 ត្រឡប់ទៅបញ្ជីអ្នកប្រើ', 'ap_users_p_0', 'primary', BTN_ICONS.BACK)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -713,8 +711,8 @@ function setupAdminPanel(bot, deps) {
     const u = usersDb.get(Number(id));
     if (!u) {
       return showScreen(ctx, {
-        text: `${ANIM.WARN} <b>User not found.</b>`,
-        reply_markup: { inline_keyboard: [[btn('🔙 Back', 'ap_hist_p_0', 'primary', BTN_ICONS.BACK)]] }
+        text: `${ANIM.WARN} <b>រកមិនឃើញអ្នកប្រើប្រាស់។</b>`,
+        reply_markup: { inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_hist_p_0', 'primary', BTN_ICONS.BACK)]] }
       });
     }
     const tps = store.getUserTopups(u.id).map(t => ({ kind: 'topup', ...t }));
@@ -727,40 +725,40 @@ function setupAdminPanel(bot, deps) {
     const slice = all.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE);
 
     let text =
-      `${ANIM.CHART} <b>USER HISTORY</b> — ${escapeHtml(u.name || 'User')}\n` +
+      `${ANIM.CHART} <b>ប្រវត្តិអ្នកប្រើប្រាស់</b> — ${escapeHtml(u.name || 'User')}\n` +
       `${DIV}\n` +
       `${ANIM.ID} <code>${u.id}</code> • ${escapeHtml(u.username || '-')}\n` +
-      `${ANIM.MONEY} Balance: <code>$${Number(u.balance || 0).toFixed(2)}</code>\n` +
-      `${ANIM.DEPOSIT} Top-ups: <code>${stats.topupCount}</code> • ${ANIM.WITHDRAW} Withdrawals: <code>${stats.withdrawCount}</code>\n` +
+      `${ANIM.MONEY} សមតុល្យ: <code>$${Number(u.balance || 0).toFixed(2)}</code>\n` +
+      `${ANIM.DEPOSIT} ដាក់ប្រាក់: <code>${stats.topupCount}</code> • ${ANIM.WITHDRAW} ដកប្រាក់: <code>${stats.withdrawCount}</code>\n` +
       `${DIV}\n`;
 
     const rows = [];
     if (all.length === 0) {
-      text += `\n<i>${ANIM.WARN} No transaction history for this user yet.</i>\n`;
+      text += `\n<i>${ANIM.WARN} មិនទាន់មានប្រវត្តិប្រតិបត្តិការសម្រាប់អ្នកប្រើនេះទេ។</i>\n`;
     } else {
       slice.forEach((tx) => {
         if (tx.kind === 'topup') {
-          text += `\n${ANIM.DEPOSIT} <b>TOP-UP</b> <code>${escapeHtml(tx.id)}</code>\n` +
+          text += `\n${ANIM.DEPOSIT} <b>ដាក់ប្រាក់</b> <code>${escapeHtml(tx.id)}</code>\n` +
             `   💵 $${Number(tx.amountUsd || 0).toFixed(2)} • ${TOPUP_STATUS_LABEL[tx.status] || tx.status}\n` +
             `   🗓 <code>${fmtDate(tx.createdAt)}</code>\n`;
-          rows.push([btn(`💰 Top-Up ${tx.id}`, `ap_tpv_${tx.id}`, 'primary')]);
+          rows.push([btn(`💰 ដាក់ប្រាក់ ${tx.id}`, `ap_tpv_${tx.id}`, 'primary')]);
         } else {
-          text += `\n${ANIM.WITHDRAW} <b>WITHDRAW</b> <code>${escapeHtml(tx.id)}</code>\n` +
-            `   🔑 Code: <code>${escapeHtml(tx.code || '-')}</code> • ${WITHDRAW_STATUS_LABEL[tx.status] || tx.status}\n` +
+          text += `\n${ANIM.WITHDRAW} <b>ដកប្រាក់</b> <code>${escapeHtml(tx.id)}</code>\n` +
+            `   🔑 កូដ: <code>${escapeHtml(tx.code || '-')}</code> • ${WITHDRAW_STATUS_LABEL[tx.status] || tx.status}\n` +
             `   🗓 <code>${fmtDate(tx.createdAt)}</code>\n`;
-          rows.push([btn(`💸 Withdraw ${tx.id}`, `ap_wdv_${tx.id}`, 'primary')]);
+          rows.push([btn(`💸 ដកប្រាក់ ${tx.id}`, `ap_wdv_${tx.id}`, 'primary')]);
         }
       });
     }
-    text += `${DIV}\n<i>Page ${p + 1}/${totalPages}</i>`;
+    text += `${DIV}\n<i>ទំព័រ ${p + 1}/${totalPages}</i>`;
 
     const nav = [];
-    if (p > 0) nav.push(btn('⬅️ Prev', `ap_uhist_${u.id}_${p - 1}`, 'primary', BTN_ICONS.BACK));
-    if (p < totalPages - 1) nav.push(btn('Next ➡️', `ap_uhist_${u.id}_${p + 1}`, 'primary'));
+    if (p > 0) nav.push(btn('⬅️ មុន', `ap_uhist_${u.id}_${p - 1}`, 'primary', BTN_ICONS.BACK));
+    if (p < totalPages - 1) nav.push(btn('បន្ទាប់ ➡️', `ap_uhist_${u.id}_${p + 1}`, 'primary'));
 
     const reply_markup = { inline_keyboard: rows };
     if (nav.length) reply_markup.inline_keyboard.push(nav);
-    reply_markup.inline_keyboard.push([btn('🔙 Back', 'ap_hist_p_0', 'primary', BTN_ICONS.BACK)]);
+    reply_markup.inline_keyboard.push([btn('🔙 ត្រឡប់ក្រោយ', 'ap_hist_p_0', 'primary', BTN_ICONS.BACK)]);
     return showScreen(ctx, { text, reply_markup });
   }
 
@@ -788,14 +786,14 @@ function setupAdminPanel(bot, deps) {
     const slice = list.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE);
 
     let text =
-      `${ANIM.DEPOSIT} <b>TOP-UP HISTORY</b>\n` +
+      `${ANIM.DEPOSIT} <b>ប្រវត្តិដាក់ប្រាក់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.CHART} <b>Filter:</b> ${escapeHtml((TOPUP_FILTERS.find(f => f[0] === filter) || ['', 'All'])[1])}  •  <b>Total:</b> <code>${list.length}</code>\n` +
+      `${ANIM.CHART} <b>តម្រង:</b> ${escapeHtml((TOPUP_FILTERS.find(f => f[0] === filter) || ['', 'ទាំងអស់'])[1])}  •  <b>សរុប:</b> <code>${list.length}</code>\n` +
       `${DIV}\n`;
 
     const rows = [];
     if (slice.length === 0) {
-      text += `\n<i>${ANIM.WARN} មិនមានកំណត់ត្រាបញ្ចូលប្រាក់សម្រាប់តម្រងនេះទេ។</i>\n`;
+      text += `\n<i>${ANIM.WARN} មិនមានកំណត់ត្រាដាក់ប្រាក់សម្រាប់តម្រងនេះទេ។</i>\n`;
     } else {
       slice.forEach((t) => {
         const amtLine = t.currency === 'KHR'
@@ -808,7 +806,7 @@ function setupAdminPanel(bot, deps) {
         rows.push([btn(`🔎 ${t.id} • ${amtLine}`, `ap_tpv_${t.id}`, 'primary')]);
       });
     }
-    text += `${DIV}\n<i>Page ${p + 1}/${totalPages}</i>`;
+    text += `${DIV}\n<i>ទំព័រ ${p + 1}/${totalPages}</i>`;
 
     const reply_markup = { inline_keyboard: [] };
     // filters split into two rows for readability
@@ -817,13 +815,13 @@ function setupAdminPanel(bot, deps) {
     rows.forEach(r => reply_markup.inline_keyboard.push(r));
 
     const nav = [];
-    if (p > 0) nav.push(btn('⬅️ Prev', `ap_tp_${filter}_${p - 1}`, 'primary', BTN_ICONS.BACK));
-    if (p < totalPages - 1) nav.push(btn('Next ➡️', `ap_tp_${filter}_${p + 1}`, 'primary'));
+    if (p > 0) nav.push(btn('⬅️ មុន', `ap_tp_${filter}_${p - 1}`, 'primary', BTN_ICONS.BACK));
+    if (p < totalPages - 1) nav.push(btn('បន្ទាប់ ➡️', `ap_tp_${filter}_${p + 1}`, 'primary'));
     if (nav.length) reply_markup.inline_keyboard.push(nav);
 
     reply_markup.inline_keyboard.push([
-      btn('🔍 Search', 'ap_tp_search', 'success', BTN_ICONS.CHART),
-      btn('🔙 Admin Panel', 'ap_home', 'primary', BTN_ICONS.BACK)
+      btn('🔍 ស្វែងរក', 'ap_tp_search', 'success', BTN_ICONS.CHART),
+      btn('🔙 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.BACK)
     ]);
     return showScreen(ctx, { text, reply_markup });
   }
@@ -832,8 +830,8 @@ function setupAdminPanel(bot, deps) {
     const t = store.findTopup(id);
     if (!t) {
       return showScreen(ctx, {
-        text: `${ANIM.WARN} <b>Top-up record not found.</b>`,
-        reply_markup: { inline_keyboard: [[btn('🔙 Back', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]] }
+        text: `${ANIM.WARN} <b>រកមិនឃើញកំណត់ត្រាដាក់ប្រាក់។</b>`,
+        reply_markup: { inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]] }
       });
     }
     const amtLine = t.currency === 'KHR'
@@ -841,43 +839,43 @@ function setupAdminPanel(bot, deps) {
       : `$${Number(t.amountUsd || 0).toFixed(2)} USD`;
 
     let text =
-      `${ANIM.DEPOSIT} <b>TOP-UP DETAILS</b>\n` +
+      `${ANIM.DEPOSIT} <b>ព័ត៌មានលម្អិតដាក់ប្រាក់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.RECEIPT} <b>Transaction ID:</b> <code>${escapeHtml(t.id)}</code>\n` +
-      `${ANIM.USER} <b>User:</b> ${escapeHtml(t.name || '')} ${escapeHtml(t.username || '')}\n` +
-      `${ANIM.ID} <b>Telegram ID:</b> <code>${t.userId}</code>\n` +
-      `${ANIM.MELBET} <b>Melbet ID:</b> <code>${escapeHtml(t.oneXBetId || '-')}</code>\n` +
-      `${ANIM.MONEY} <b>Amount:</b> ${amtLine}\n` +
-      `${ANIM.CARD} <b>Method:</b> ${escapeHtml(t.method || 'KHQR')}\n` +
-      `${ANIM.ID} <b>Status:</b> ${TOPUP_STATUS_LABEL[t.status] || t.status}\n`;
+      `${ANIM.RECEIPT} <b>លេខប្រតិបត្តិការ:</b> <code>${escapeHtml(t.id)}</code>\n` +
+      `${ANIM.USER} <b>អ្នកប្រើ:</b> ${escapeHtml(t.name || '')} ${escapeHtml(t.username || '')}\n` +
+      `${ANIM.ID} <b>លេខ Telegram ID:</b> <code>${t.userId}</code>\n` +
+      `${ANIM.MELBET} <b>ID Melbet:</b> <code>${escapeHtml(t.oneXBetId || '-')}</code>\n` +
+      `${ANIM.MONEY} <b>ចំនួនទឹកប្រាក់:</b> ${amtLine}\n` +
+      `${ANIM.CARD} <b>មធ្យោបាយ:</b> ${escapeHtml(t.method || 'KHQR')}\n` +
+      `${ANIM.ID} <b>ស្ថានភាព:</b> ${TOPUP_STATUS_LABEL[t.status] || t.status}\n`;
 
     if (expanded) {
       text +=
         `${DIV}\n` +
-        `${ANIM.PIN} <b>Reference:</b> <code>${escapeHtml(t.reference || t.id)}</code>\n` +
-        `${ANIM.CURRENCY || ANIM.MONEY} <b>Currency:</b> <code>${escapeHtml(t.currency || 'USD')}</code>\n` +
-        `${ANIM.CALENDAR} <b>Submitted:</b> <code>${fmtDate(t.createdAt)}</code>\n` +
-        `${ANIM.CALENDAR} <b>Decided:</b> <code>${t.decidedAt ? fmtDate(t.decidedAt) : '-'}</code>\n` +
-        `${ANIM.OFFICER} <b>Decided by:</b> ${escapeHtml(t.decidedBy || '-')}\n` +
-        `${ANIM.CROSS} <b>Reject reason:</b> ${escapeHtml(t.rejectReason || '-')}\n`;
+        `${ANIM.PIN} <b>លេខយោង:</b> <code>${escapeHtml(t.reference || t.id)}</code>\n` +
+        `${ANIM.MONEY} <b>រូបិយប័ណ្ណ:</b> <code>${escapeHtml(t.currency || 'USD')}</code>\n` +
+        `${ANIM.CALENDAR} <b>ដាក់ស្នើ:</b> <code>${fmtDate(t.createdAt)}</code>\n` +
+        `${ANIM.CALENDAR} <b>សម្រេច:</b> <code>${t.decidedAt ? fmtDate(t.decidedAt) : '-'}</code>\n` +
+        `${ANIM.OFFICER} <b>សម្រេចដោយ:</b> ${escapeHtml(t.decidedBy || '-')}\n` +
+        `${ANIM.CROSS} <b>មូលហេតុបដិសេធ:</b> ${escapeHtml(t.rejectReason || '-')}\n`;
     }
     text += `${DIV}`;
 
     const reply_markup = { inline_keyboard: [] };
     if (!expanded) {
-      reply_markup.inline_keyboard.push([btn('📄 Show More', `ap_tpmore_${t.id}`, 'success', BTN_ICONS.CHART)]);
+      reply_markup.inline_keyboard.push([btn('📄 មើលបន្ថែម', `ap_tpmore_${t.id}`, 'success', BTN_ICONS.CHART)]);
     }
-    reply_markup.inline_keyboard.push([btn('🔙 Back to Top-Ups', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]);
-    reply_markup.inline_keyboard.push([btn('🏠 Admin Panel', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]);
+    reply_markup.inline_keyboard.push([btn('🔙 ត្រឡប់ទៅដាក់ប្រាក់', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]);
+    reply_markup.inline_keyboard.push([btn('🏠 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]);
     return showScreen(ctx, { text, reply_markup });
   }
 
   function promptTopupSearch(ctx) {
     userStates.set(ctx.from.id, { state: 'AP_TOPUP_SEARCH' });
     const text =
-      `${ANIM.CHART} <b>Search Top-Up</b>\n${DIV}\n` +
-      `${ANIM.CHAT} <b>សូមផ្ញើ Transaction ID, Telegram ID ឬ Username៖</b>`;
-    const reply_markup = { inline_keyboard: [[btn('🔙 Back', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]] };
+      `${ANIM.CHART} <b>ស្វែងរកការដាក់ប្រាក់</b>\n${DIV}\n` +
+      `${ANIM.CHAT} <b>សូមផ្ញើលេខប្រតិបត្តិការ, លេខ Telegram ID ឬឈ្មោះអ្នកប្រើ៖</b>`;
+    const reply_markup = { inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]] };
     return showScreen(ctx, { text, reply_markup });
   }
 
@@ -895,11 +893,11 @@ function setupAdminPanel(bot, deps) {
     userStates.delete(ctx.from.id);
     if (matches.length === 0) {
       await showScreen(ctx, {
-        text: `${ANIM.WARN} <b>No top-up found for</b> <code>${escapeHtml(q)}</code>.`,
+        text: `${ANIM.WARN} <b>រកមិនឃើញការដាក់ប្រាក់សម្រាប់</b> <code>${escapeHtml(q)}</code>។`,
         reply_markup: {
           inline_keyboard: [
-            [btn('🔁 Try Again', 'ap_tp_search', 'primary', BTN_ICONS.REFRESH)],
-            [btn('🔙 Back', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]
+            [btn('🔁 ព្យាយាមម្តងទៀត', 'ap_tp_search', 'primary', BTN_ICONS.REFRESH)],
+            [btn('🔙 ត្រឡប់ក្រោយ', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]
           ]
         }
       });
@@ -910,9 +908,9 @@ function setupAdminPanel(bot, deps) {
       return true;
     }
     // multiple -> list
-    let t = `${ANIM.DEPOSIT} <b>Search results (${matches.length})</b>\n${DIV}\n`;
+    let t = `${ANIM.DEPOSIT} <b>លទ្ធផលស្វែងរក (${matches.length})</b>\n${DIV}\n`;
     const rows = matches.slice(0, 10).map(m => [btn(`🔎 ${m.id} • $${Number(m.amountUsd || 0).toFixed(2)}`, `ap_tpv_${m.id}`, 'primary')]);
-    rows.push([btn('🔙 Back', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]);
+    rows.push([btn('🔙 ត្រឡប់ក្រោយ', 'ap_tp_all_0', 'primary', BTN_ICONS.BACK)]);
     await showScreen(ctx, { text: t, reply_markup: { inline_keyboard: rows } });
     return true;
   }
@@ -941,9 +939,9 @@ function setupAdminPanel(bot, deps) {
     const slice = list.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE);
 
     let text =
-      `${ANIM.WITHDRAW} <b>WITHDRAW HISTORY</b>\n` +
+      `${ANIM.WITHDRAW} <b>ប្រវត្តិដកប្រាក់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.CHART} <b>Filter:</b> ${escapeHtml((WITHDRAW_FILTERS.find(f => f[0] === filter) || ['', 'All'])[1])}  •  <b>Total:</b> <code>${list.length}</code>\n` +
+      `${ANIM.CHART} <b>តម្រង:</b> ${escapeHtml((WITHDRAW_FILTERS.find(f => f[0] === filter) || ['', 'ទាំងអស់'])[1])}  •  <b>សរុប:</b> <code>${list.length}</code>\n` +
       `${DIV}\n`;
 
     const rows = [];
@@ -954,11 +952,11 @@ function setupAdminPanel(bot, deps) {
         text +=
           `\n${ANIM.RECEIPT} <code>${escapeHtml(w.id)}</code> — ${WITHDRAW_STATUS_LABEL[w.status] || w.status}\n` +
           `   ${ANIM.USER} ${escapeHtml(w.name || '')} ${escapeHtml(w.username || '')}\n` +
-          `   🔑 Code: <code>${escapeHtml(w.code || '-')}</code>\n`;
+          `   🔑 កូដ: <code>${escapeHtml(w.code || '-')}</code>\n`;
         rows.push([btn(`🔎 ${w.id} • ${escapeHtml(w.code || '')}`, `ap_wdv_${w.id}`, 'primary')]);
       });
     }
-    text += `${DIV}\n<i>Page ${p + 1}/${totalPages}</i>`;
+    text += `${DIV}\n<i>ទំព័រ ${p + 1}/${totalPages}</i>`;
 
     const reply_markup = { inline_keyboard: [] };
     reply_markup.inline_keyboard.push(withdrawFilterRow(filter).slice(0, 3));
@@ -966,13 +964,13 @@ function setupAdminPanel(bot, deps) {
     rows.forEach(r => reply_markup.inline_keyboard.push(r));
 
     const nav = [];
-    if (p > 0) nav.push(btn('⬅️ Prev', `ap_wdf_${filter}_${p - 1}`, 'primary', BTN_ICONS.BACK));
-    if (p < totalPages - 1) nav.push(btn('Next ➡️', `ap_wdf_${filter}_${p + 1}`, 'primary'));
+    if (p > 0) nav.push(btn('⬅️ មុន', `ap_wdf_${filter}_${p - 1}`, 'primary', BTN_ICONS.BACK));
+    if (p < totalPages - 1) nav.push(btn('បន្ទាប់ ➡️', `ap_wdf_${filter}_${p + 1}`, 'primary'));
     if (nav.length) reply_markup.inline_keyboard.push(nav);
 
     reply_markup.inline_keyboard.push([
-      btn('🔍 Search', 'ap_wd_search', 'success', BTN_ICONS.CHART),
-      btn('🔙 Admin Panel', 'ap_home', 'primary', BTN_ICONS.BACK)
+      btn('🔍 ស្វែងរក', 'ap_wd_search', 'success', BTN_ICONS.CHART),
+      btn('🔙 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.BACK)
     ]);
     return showScreen(ctx, { text, reply_markup });
   }
@@ -981,58 +979,58 @@ function setupAdminPanel(bot, deps) {
     const w = store.findWithdrawal(id);
     if (!w) {
       return showScreen(ctx, {
-        text: `${ANIM.WARN} <b>Withdrawal record not found.</b>`,
-        reply_markup: { inline_keyboard: [[btn('🔙 Back', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]] }
+        text: `${ANIM.WARN} <b>រកមិនឃើញកំណត់ត្រាដកប្រាក់។</b>`,
+        reply_markup: { inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]] }
       });
     }
 
     let text =
-      `${ANIM.WITHDRAW} <b>WITHDRAWAL DETAILS</b>\n` +
+      `${ANIM.WITHDRAW} <b>ព័ត៌មានលម្អិតដកប្រាក់</b>\n` +
       `${DIV}\n` +
-      `${ANIM.RECEIPT} <b>Withdrawal ID:</b> <code>${escapeHtml(w.id)}</code>\n` +
-      `${ANIM.USER} <b>User:</b> ${escapeHtml(w.name || '')} ${escapeHtml(w.username || '')}\n` +
-      `${ANIM.ID} <b>Telegram ID:</b> <code>${w.userId}</code>\n` +
-      `${ANIM.SHIELD} <b>Code:</b> <code>${escapeHtml(w.code || '-')}</code>\n` +
-      `${ANIM.CARD} <b>Method:</b> ${escapeHtml(w.method || '-')}\n` +
-      `${ANIM.ID} <b>Status:</b> ${WITHDRAW_STATUS_LABEL[w.status] || w.status}\n`;
+      `${ANIM.RECEIPT} <b>លេខដកប្រាក់:</b> <code>${escapeHtml(w.id)}</code>\n` +
+      `${ANIM.USER} <b>អ្នកប្រើ:</b> ${escapeHtml(w.name || '')} ${escapeHtml(w.username || '')}\n` +
+      `${ANIM.ID} <b>លេខ Telegram ID:</b> <code>${w.userId}</code>\n` +
+      `${ANIM.SHIELD} <b>កូដ:</b> <code>${escapeHtml(w.code || '-')}</code>\n` +
+      `${ANIM.CARD} <b>មធ្យោបាយ:</b> ${escapeHtml(w.method || '-')}\n` +
+      `${ANIM.ID} <b>ស្ថានភាព:</b> ${WITHDRAW_STATUS_LABEL[w.status] || w.status}\n`;
 
     if (expanded) {
       text +=
         `${DIV}\n` +
-        `${ANIM.MONEY} <b>Amount:</b> ${w.amount != null ? escapeHtml(String(w.amount)) : '-'}\n` +
-        `${ANIM.CARD} <b>Account:</b> ${escapeHtml(w.account || '-')}\n` +
-        `${ANIM.CALENDAR} <b>Requested:</b> <code>${fmtDate(w.createdAt)}</code>\n` +
-        `${ANIM.CALENDAR} <b>Decided:</b> <code>${w.decidedAt ? fmtDate(w.decidedAt) : '-'}</code>\n` +
-        `${ANIM.OFFICER} <b>Processed by:</b> ${escapeHtml(w.decidedBy || '-')}\n` +
-        `${ANIM.CROSS} <b>Reject reason:</b> ${escapeHtml(w.rejectReason || '-')}\n`;
+        `${ANIM.MONEY} <b>ចំនួនទឹកប្រាក់:</b> ${w.amount != null ? escapeHtml(String(w.amount)) : '-'}\n` +
+        `${ANIM.CARD} <b>គណនី:</b> ${escapeHtml(w.account || '-')}\n` +
+        `${ANIM.CALENDAR} <b>ថ្ងៃស្នើសុំ:</b> <code>${fmtDate(w.createdAt)}</code>\n` +
+        `${ANIM.CALENDAR} <b>ថ្ងៃសម្រេច:</b> <code>${w.decidedAt ? fmtDate(w.decidedAt) : '-'}</code>\n` +
+        `${ANIM.OFFICER} <b>ដំណើរការដោយ:</b> ${escapeHtml(w.decidedBy || '-')}\n` +
+        `${ANIM.CROSS} <b>មូលហេតុបដិសេធ:</b> ${escapeHtml(w.rejectReason || '-')}\n`;
     }
     text += `${DIV}`;
 
     const reply_markup = { inline_keyboard: [] };
     if (w.photoFileId) {
-      reply_markup.inline_keyboard.push([btn('🖼 View Proof (QR)', `ap_wdphoto_${w.id}`, 'primary', BTN_ICONS.CAMERA)]);
+      reply_markup.inline_keyboard.push([btn('🖼 មើលរូបភាពបញ្ជាក់ (QR)', `ap_wdphoto_${w.id}`, 'primary', BTN_ICONS.CAMERA)]);
     }
     if (!expanded) {
-      reply_markup.inline_keyboard.push([btn('📄 Show More', `ap_wdmore_${w.id}`, 'success', BTN_ICONS.CHART)]);
+      reply_markup.inline_keyboard.push([btn('📄 មើលបន្ថែម', `ap_wdmore_${w.id}`, 'success', BTN_ICONS.CHART)]);
     }
-    reply_markup.inline_keyboard.push([btn('🔙 Back to Withdrawals', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]);
-    reply_markup.inline_keyboard.push([btn('🏠 Admin Panel', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]);
+    reply_markup.inline_keyboard.push([btn('🔙 ត្រឡប់ទៅដកប្រាក់', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]);
+    reply_markup.inline_keyboard.push([btn('🏠 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.DIAMOND)]);
     return showScreen(ctx, { text, reply_markup });
   }
 
   async function showWithdrawPhoto(ctx, id) {
     const w = store.findWithdrawal(id);
     if (!w || !w.photoFileId) {
-      await ack(ctx, '⚠️ No proof image available.');
+      await ack(ctx, '⚠️ គ្មានរូបភាពបញ្ជាក់ទេ។');
       return;
     }
     await ack(ctx);
     const caption =
-      `${ANIM.CAMERA} <b>Withdrawal Proof</b> — <code>${escapeHtml(w.id)}</code>\n` +
+      `${ANIM.CAMERA} <b>រូបភាពបញ្ជាក់ដកប្រាក់</b> — <code>${escapeHtml(w.id)}</code>\n` +
       `${ANIM.USER} ${escapeHtml(w.name || '')} ${escapeHtml(w.username || '')}\n` +
-      `${ANIM.SHIELD} Code: <code>${escapeHtml(w.code || '-')}</code>`;
+      `${ANIM.SHIELD} កូដ: <code>${escapeHtml(w.code || '-')}</code>`;
     const reply_markup = {
-      inline_keyboard: [[btn('🔙 Back to Details', `ap_wdv_${w.id}`, 'primary', BTN_ICONS.BACK)]]
+      inline_keyboard: [[btn('🔙 ត្រឡប់ទៅព័ត៌មានលម្អិត', `ap_wdv_${w.id}`, 'primary', BTN_ICONS.BACK)]]
     };
     return showScreen(ctx, { text: caption, photo: w.photoFileId, reply_markup });
   }
@@ -1040,9 +1038,9 @@ function setupAdminPanel(bot, deps) {
   function promptWithdrawSearch(ctx) {
     userStates.set(ctx.from.id, { state: 'AP_WITHDRAW_SEARCH' });
     const text =
-      `${ANIM.CHART} <b>Search Withdrawal</b>\n${DIV}\n` +
-      `${ANIM.CHAT} <b>សូមផ្ញើ Withdrawal ID, Telegram ID ឬ Username៖</b>`;
-    const reply_markup = { inline_keyboard: [[btn('🔙 Back', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]] };
+      `${ANIM.CHART} <b>ស្វែងរកការដកប្រាក់</b>\n${DIV}\n` +
+      `${ANIM.CHAT} <b>សូមផ្ញើលេខដកប្រាក់, លេខ Telegram ID ឬឈ្មោះអ្នកប្រើ៖</b>`;
+    const reply_markup = { inline_keyboard: [[btn('🔙 ត្រឡប់ក្រោយ', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]] };
     return showScreen(ctx, { text, reply_markup });
   }
 
@@ -1060,11 +1058,11 @@ function setupAdminPanel(bot, deps) {
     userStates.delete(ctx.from.id);
     if (matches.length === 0) {
       await showScreen(ctx, {
-        text: `${ANIM.WARN} <b>No withdrawal found for</b> <code>${escapeHtml(q)}</code>.`,
+        text: `${ANIM.WARN} <b>រកមិនឃើញការដកប្រាក់សម្រាប់</b> <code>${escapeHtml(q)}</code>។`,
         reply_markup: {
           inline_keyboard: [
-            [btn('🔁 Try Again', 'ap_wd_search', 'primary', BTN_ICONS.REFRESH)],
-            [btn('🔙 Back', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]
+            [btn('🔁 ព្យាយាមម្តងទៀត', 'ap_wd_search', 'primary', BTN_ICONS.REFRESH)],
+            [btn('🔙 ត្រឡប់ក្រោយ', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]
           ]
         }
       });
@@ -1074,9 +1072,9 @@ function setupAdminPanel(bot, deps) {
       await showWithdrawDetail(ctx, matches[0].id, false);
       return true;
     }
-    let t = `${ANIM.WITHDRAW} <b>Search results (${matches.length})</b>\n${DIV}\n`;
+    let t = `${ANIM.WITHDRAW} <b>លទ្ធផលស្វែងរក (${matches.length})</b>\n${DIV}\n`;
     const rows = matches.slice(0, 10).map(m => [btn(`🔎 ${m.id} • ${m.code || ''}`, `ap_wdv_${m.id}`, 'primary')]);
-    rows.push([btn('🔙 Back', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]);
+    rows.push([btn('🔙 ត្រឡប់ក្រោយ', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]);
     await showScreen(ctx, { text: t, reply_markup: { inline_keyboard: rows } });
     return true;
   }
@@ -1091,30 +1089,30 @@ function setupAdminPanel(bot, deps) {
     const approvedTopupUsd = topups.filter(t => t.status === 'approved').reduce((a, t) => a + (Number(t.amountUsd) || 0), 0);
     const completedWd = withdrawals.filter(w => w.status === 'completed').length;
 
-    const statusLine = s.maintenance ? '🔴 CLOSED (Maintenance)' : '🟢 OPEN';
+    const statusLine = s.maintenance ? '🔴 បិទ (កំពុងថែទាំ)' : '🟢 បើក';
     const text =
-      `${ANIM.SHIELD} <b>BOT SETTINGS</b>\n` +
+      `${ANIM.SHIELD} <b>ការកំណត់ Bot</b>\n` +
       `${DIV}\n` +
-      `${ANIM.ID} <b>Admin ID:</b> <code>${escapeHtml(ADMIN_ID)}</code>\n` +
-      `${ANIM.DIAMOND} <b>Store:</b> <code>${escapeHtml(STORE_NAME || '-')}</code>\n` +
-      `${ANIM.REFRESH} <b>Exchange rate:</b> <code>$1 = ${Number(EXCHANGE_RATE).toLocaleString()} ៛</code>\n` +
-      `${ANIM.MEGAPHONE} <b>Channel:</b> ${escapeHtml(CHANNEL_USERNAME || '-')} (<code>${escapeHtml(String(CHANNEL_ID || '-'))}</code>)\n` +
+      `${ANIM.ID} <b>លេខសម្គាល់អ្នកគ្រប់គ្រង:</b> <code>${escapeHtml(ADMIN_ID)}</code>\n` +
+      `${ANIM.DIAMOND} <b>ហាង:</b> <code>${escapeHtml(STORE_NAME || '-')}</code>\n` +
+      `${ANIM.REFRESH} <b>អត្រាប្តូរប្រាក់:</b> <code>$1 = ${Number(EXCHANGE_RATE).toLocaleString()} ៛</code>\n` +
+      `${ANIM.MEGAPHONE} <b>ឆានែល:</b> ${escapeHtml(CHANNEL_USERNAME || '-')} (<code>${escapeHtml(String(CHANNEL_ID || '-'))}</code>)\n` +
       `${DIV}\n` +
-      `${ANIM.USER} <b>Registered users:</b> <code>${usersDb.size}</code>\n` +
-      `${ANIM.DEPOSIT} <b>Top-up records:</b> <code>${topups.length}</code> (approved $${approvedTopupUsd.toFixed(2)})\n` +
-      `${ANIM.WITHDRAW} <b>Withdraw records:</b> <code>${withdrawals.length}</code> (${completedWd} completed)\n` +
+      `${ANIM.USER} <b>អ្នកប្រើប្រាស់ចុះឈ្មោះ:</b> <code>${usersDb.size}</code> នាក់\n` +
+      `${ANIM.DEPOSIT} <b>កំណត់ត្រាដាក់ប្រាក់:</b> <code>${topups.length}</code> (អនុម័ត $${approvedTopupUsd.toFixed(2)})\n` +
+      `${ANIM.WITHDRAW} <b>កំណត់ត្រាដកប្រាក់:</b> <code>${withdrawals.length}</code> (${completedWd} ជោគជ័យ)\n` +
       `${DIV}\n` +
-      `<b>Bot status:</b> ${statusLine}\n` +
-      `${s.closedAt ? `🔴 <i>Last closed:</i> <code>${fmtDate(s.closedAt)}</code>\n` : ''}` +
-      `${s.openedAt ? `🟢 <i>Last opened:</i> <code>${fmtDate(s.openedAt)}</code>\n` : ''}` +
+      `<b>ស្ថានភាព Bot:</b> ${statusLine}\n` +
+      `${s.closedAt ? `🔴 <i>បិទចុងក្រោយ:</i> <code>${fmtDate(s.closedAt)}</code>\n` : ''}` +
+      `${s.openedAt ? `🟢 <i>បើកចុងក្រោយ:</i> <code>${fmtDate(s.openedAt)}</code>\n` : ''}` +
       `${DIV}`;
     const reply_markup = {
       inline_keyboard: [
         [
-          btn('🔴 Close Bot', 'ap_close', 'danger', BTN_ICONS.CANCEL),
-          btn('🟢 Open Bot', 'ap_open', 'success', BTN_ICONS.SUCCESS)
+          btn('🔴 បិទ Bot', 'ap_close', 'danger', BTN_ICONS.CANCEL),
+          btn('🟢 បើក Bot', 'ap_open', 'success', BTN_ICONS.SUCCESS)
         ],
-        [btn('🔙 Admin Panel', 'ap_home', 'primary', BTN_ICONS.BACK)]
+        [btn('🔙 ផ្ទាំងគ្រប់គ្រង', 'ap_home', 'primary', BTN_ICONS.BACK)]
       ]
     };
     return showScreen(ctx, { text, reply_markup });
@@ -1204,16 +1202,16 @@ function setupAdminPanel(bot, deps) {
     const target = { userId: u.id, username: u.username || '', displayName: u.name || 'User' };
     userStates.set(ctx.from.id, { state: 'AP_ANN_ONE_MSG', target });
     return showScreen(ctx, {
-      text: `${ANIM.CROWN} <b>Send message to</b> ${escapeHtml(target.displayName)} (<code>${target.userId}</code>)\n${DIV}\n${ANIM.DOWN} <b>សូមផ្ញើសារ / មេឌៀ៖</b>`,
-      reply_markup: { inline_keyboard: [[btn('❌ Cancel', `ap_user_${u.id}_0`, 'danger', BTN_ICONS.CANCEL)]] }
+      text: `${ANIM.CROWN} <b>ផ្ញើសារទៅ</b> ${escapeHtml(target.displayName)} (<code>${target.userId}</code>)\n${DIV}\n${ANIM.DOWN} <b>សូមផ្ញើសារ / មេឌៀ៖</b>`,
+      reply_markup: { inline_keyboard: [[btn('❌ បោះបង់', `ap_user_${u.id}_0`, 'danger', BTN_ICONS.CANCEL)]] }
     });
   });
 
   // Maintenance
   bot.action('ap_close', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return confirmClose(ctx); });
-  bot.action('ap_close_yes', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx, '🔴 Bot closed.'); return doClose(ctx); });
+  bot.action('ap_close_yes', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx, '🔴 Bot បានបិទ!'); return doClose(ctx); });
   bot.action('ap_open', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return confirmOpen(ctx); });
-  bot.action('ap_open_yes', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx, '🟢 Bot opened.'); return doOpen(ctx); });
+  bot.action('ap_open_yes', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx, '🟢 Bot បានបើក!'); return doOpen(ctx); });
 
   // Settings
   bot.action('ap_settings', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return showSettings(ctx); });

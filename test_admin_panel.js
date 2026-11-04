@@ -119,7 +119,7 @@ async function fire(ctx, data) {
     const ctx = makeCtx(111, { data: 'ap_home' });
     lastScreen = null;
     await fire(ctx, 'ap_home');
-    assert(ctx._alerts.some(a => /Access Denied/i.test(a)), 'non-admin should get Access Denied');
+    assert(ctx._alerts.some(a => /បដិសេធការចូល/.test(a)), 'non-admin should get Access Denied (Khmer)');
     assert(lastScreen === null, 'non-admin must not see the panel');
     ok('non-admin blocked from ap_home (Access Denied)');
   }
@@ -128,7 +128,7 @@ async function fire(ctx, data) {
   {
     const ctx = makeCtx(999, { data: 'ap_home' });
     await fire(ctx, 'ap_home');
-    assert(/ADMIN CONTROL PANEL/.test(lastScreen.text), 'admin should see panel');
+    assert(/ផ្ទាំងគ្រប់គ្រង/.test(lastScreen.text), 'admin should see panel');
     ok('admin opens Admin Panel');
   }
 
@@ -138,10 +138,10 @@ async function fire(ctx, data) {
     let replied = '';
     ctxBad.replyWithHTML = (t) => { replied = t; return Promise.resolve({}); };
     await commands['admin'](ctxBad);
-    assert(/Access Denied/i.test(replied), '/admin denies non-admin');
+    assert(/បដិសេធការចូល/.test(replied), '/admin denies non-admin');
     const ctxGood = makeCtx(999);
     await commands['admin'](ctxGood);
-    assert(/ADMIN CONTROL PANEL/.test(lastScreen.text), '/admin opens panel for admin');
+    assert(/ផ្ទាំងគ្រប់គ្រង/.test(lastScreen.text), '/admin opens panel for admin');
     ok('/admin command authorization works');
   }
 
@@ -166,22 +166,22 @@ async function fire(ctx, data) {
     store.updateWithdrawal('WD1', { status: 'completed', decidedBy: 'Admin', decidedAt: new Date().toISOString() });
 
     await fire(makeCtx(999, { data: 'ap_tp_all_0' }), 'ap_tp_all_0');
-    assert(/TOP-UP HISTORY/.test(lastScreen.text) && /TX1/.test(lastScreen.text), 'topup list shows TX1');
+    assert(/ប្រវត្តិដាក់ប្រាក់/.test(lastScreen.text) && /TX1/.test(lastScreen.text), 'topup list shows TX1');
 
     await fire(makeCtx(999, { data: 'ap_tp_approved_0' }), 'ap_tp_approved_0');
     assert(/TX1/.test(lastScreen.text) && !/TX2/.test(lastScreen.text), 'approved filter shows only TX1');
 
     await fire(makeCtx(999, { data: 'ap_tpv_TX1' }), 'ap_tpv_TX1');
-    assert(/TOP-UP DETAILS/.test(lastScreen.text) && /Show More/.test(JSON.stringify(lastScreen.reply_markup)), 'topup detail has Show More');
+    assert(/ព័ត៌មានលម្អិតដាក់ប្រាក់/.test(lastScreen.text) && /មើលបន្ថែម/.test(JSON.stringify(lastScreen.reply_markup)), 'topup detail has Show More');
 
     await fire(makeCtx(999, { data: 'ap_tpmore_TX1' }), 'ap_tpmore_TX1');
-    assert(/Submitted:/.test(lastScreen.text) && !/Show More/.test(JSON.stringify(lastScreen.reply_markup)), 'expanded detail shows full fields');
+    assert(/ដាក់ស្នើ:/.test(lastScreen.text) && !/មើលបន្ថែម/.test(JSON.stringify(lastScreen.reply_markup)), 'expanded detail shows full fields');
 
     await fire(makeCtx(999, { data: 'ap_wdf_all_0' }), 'ap_wdf_all_0');
-    assert(/WITHDRAW HISTORY/.test(lastScreen.text) && /WD1/.test(lastScreen.text), 'withdraw list shows WD1');
+    assert(/ប្រវត្តិដកប្រាក់/.test(lastScreen.text) && /WD1/.test(lastScreen.text), 'withdraw list shows WD1');
 
     await fire(makeCtx(999, { data: 'ap_wdv_WD1' }), 'ap_wdv_WD1');
-    assert(/View Proof/.test(JSON.stringify(lastScreen.reply_markup)), 'withdraw detail offers proof image');
+    assert(/មើលរូបភាពបញ្ជាក់/.test(JSON.stringify(lastScreen.reply_markup)), 'withdraw detail offers proof image');
 
     await fire(makeCtx(999, { data: 'ap_wdphoto_WD1' }), 'ap_wdphoto_WD1');
     assert(lastScreen.photo === 'PHOTO123', 'proof image uses stored file id');
@@ -191,11 +191,11 @@ async function fire(ctx, data) {
   // 6) User management + full history
   {
     await fire(makeCtx(999, { data: 'ap_users_p_0' }), 'ap_users_p_0');
-    assert(/USER MANAGEMENT/.test(lastScreen.text), 'user list renders');
+    assert(/គ្រប់គ្រងអ្នកប្រើប្រាស់/.test(lastScreen.text), 'user list renders');
     await fire(makeCtx(999, { data: 'ap_user_111_0' }), 'ap_user_111_0');
-    assert(/USER DETAILS/.test(lastScreen.text) && /Alice/.test(lastScreen.text), 'user detail renders');
+    assert(/ព័ត៌មានអ្នកប្រើប្រាស់/.test(lastScreen.text) && /Alice/.test(lastScreen.text), 'user detail renders');
     await fire(makeCtx(999, { data: 'ap_uhist_111_0' }), 'ap_uhist_111_0');
-    assert(/USER HISTORY/.test(lastScreen.text) && /TX1/.test(lastScreen.text) && /WD1/.test(lastScreen.text), 'user history combines topups+withdraws');
+    assert(/ប្រវត្តិអ្នកប្រើប្រាស់/.test(lastScreen.text) && /TX1/.test(lastScreen.text) && /WD1/.test(lastScreen.text), 'user history combines topups+withdraws');
     ok('user management + combined history');
   }
 
@@ -210,11 +210,11 @@ async function fire(ctx, data) {
     userStates.set(999, { state: 'AP_TOPUP_SEARCH' });
     const good = makeCtx(999, { message: { message_id: 3, text: 'TX1' } });
     const handled = await api.handleAdminMessage(good);
-    assert(handled === true && /TOP-UP DETAILS/.test(lastScreen.text), 'admin topup search opens detail');
+    assert(handled === true && /ព័ត៌មានលម្អិតដាក់ប្រាក់/.test(lastScreen.text), 'admin topup search opens detail');
 
     userStates.set(999, { state: 'AP_USER_SEARCH' });
     await api.handleAdminMessage(makeCtx(999, { message: { message_id: 4, text: '@alice' } }));
-    assert(/USER DETAILS/.test(lastScreen.text) && /Alice/.test(lastScreen.text), 'admin user search by @username');
+    assert(/ព័ត៌មានអ្នកប្រើប្រាស់/.test(lastScreen.text) && /Alice/.test(lastScreen.text), 'admin user search by @username');
     ok('search (topup + user) via admin message handler, with auth');
   }
 
@@ -229,7 +229,7 @@ async function fire(ctx, data) {
       return Promise.resolve({ message_id: 7 });
     };
     await fire(ctx, 'ap_ann_confirm');
-    assert(/BROADCAST COMPLETED/.test(lastScreen.text), 'broadcast report shown');
+    assert(/ការផ្សាយបានបញ្ចប់/.test(lastScreen.text), 'broadcast report shown');
     const anns = store.getAnnouncements();
     assert(anns.length === 1, 'announcement stored');
     const r = anns[0].report;
@@ -245,7 +245,7 @@ async function fire(ctx, data) {
     ctx.telegram.copyMessage = (toId) => { sentTo = toId; return Promise.resolve({ message_id: 7 }); };
     await fire(ctx, 'ap_ann_confirm');
     assert(sentTo === 111, 'single message sent to resolved numeric id');
-    assert(/MESSAGE SENT/.test(lastScreen.text), 'single send report shown');
+    assert(/សារត្រូវបានផ្ញើ/.test(lastScreen.text), 'single send report shown');
     ok('single-user announcement sends to stored numeric id only');
   }
 
