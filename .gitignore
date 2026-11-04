@@ -7,6 +7,10 @@ node_modules/
 
 # Local Database
 users.json
+settings.json
+topups.json
+withdrawals.json
+announcements.json
 
 # Raw recording files (optimized MP4s are included instead)
 *.MOV

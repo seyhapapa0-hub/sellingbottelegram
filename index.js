@@ -3,6 +3,9 @@ const { Telegraf } = require('telegraf');
 const path = require('path');
 const fs = require('fs');
 const { createKhqrCard } = require('./khqr_card');
+const store = require('./store');
+const { setupAdminPanel } = require('./admin_panel');
+let adminPanel = null; // assigned once deps are ready (before bot.launch)
 
 // Guide & Welcome Videos Configuration
 function resolveVideoPath(...names) {
@@ -133,13 +136,26 @@ const BTN_ICONS = {
   MELBET: '5467697670812376018'
 };
 
-// Admin Configuration
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '8730273904';
+// ---------------- SECURE ADMIN CONFIGURATION ----------------
+// The Admin Panel is accessible ONLY to the numeric Telegram ID configured in
+// .env (ADMIN_ID). ADMIN_CHAT_ID is kept as a backward-compatible fallback for
+// existing deployments. The id is NEVER hardcoded in source.
+const ADMIN_ID = String(process.env.ADMIN_ID || process.env.ADMIN_CHAT_ID || '').trim();
+const ADMIN_ID_VALID = /^\d+$/.test(ADMIN_ID);
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || ADMIN_ID; // used for legacy group notifications
 const USERS_FILE_PATH = path.join(__dirname, 'users.json');
 
+if (!ADMIN_ID_VALID) {
+  console.warn('⚠️  WARNING: ADMIN_ID is missing or invalid in .env. The Admin Panel is DISABLED (fail-secure) and no user can access admin features. Set ADMIN_ID=<your numeric Telegram id> in .env.');
+}
+
+// Reusable, strict admin authorization check. Compares the caller's numeric
+// Telegram id against ADMIN_ID. Button visibility / callback data are never
+// trusted for authorization — this is called inside every admin handler.
 function isAdmin(id) {
-  if (!id) return false;
-  return String(id) === '8730273904' || String(id) === String(ADMIN_CHAT_ID);
+  if (!ADMIN_ID_VALID) return false;              // fail secure
+  if (id === undefined || id === null) return false;
+  return String(id) === ADMIN_ID;
 }
 
 // In-memory Database & Sessions
@@ -209,8 +225,8 @@ function getUser(id, firstName = 'User', username = '') {
   return usersDb.get(numericId);
 }
 
-// Ensure Admin 8730273904 is always registered
-getUser(8730273904, 'Admin');
+// Ensure the configured Admin is always registered (if a valid ADMIN_ID is set)
+if (ADMIN_ID_VALID) getUser(Number(ADMIN_ID), 'Admin');
 
 /**
  * Clean In-Place Message Display:
@@ -371,59 +387,9 @@ ${ANIM.BULB} <i>បន្ទាប់ពីចូលរួម សូមចុច
   return { text, reply_markup };
 }
 
-// Function to broadcast message to all users that started the bot
-async function executeBroadcast(ctx, sourceChatId, messageId) {
-  const users = Array.from(usersDb.values());
-  const total = users.length;
-  let sentCount = 0;
-  let failedCount = 0;
-
-  const statusMsg = await ctx.reply(
-    `🚀 <b>កំពុងចាប់ផ្តើមផ្ញើសារទៅកាន់ Users ទាំង ${total} នាក់...</b>\n${ANIM.HOURGLASS} សូមរង់ចាំបន្តិច...`,
-    { parse_mode: 'HTML' }
-  ).catch(() => null);
-
-  for (const u of users) {
-    try {
-      await ctx.telegram.copyMessage(u.id, sourceChatId, messageId);
-      sentCount++;
-    } catch (err) {
-      failedCount++;
-    }
-    // Prevent Telegram flood rate limits (~25-30 msgs/sec)
-    await new Promise(r => setTimeout(r, 45));
-  }
-
-  if (statusMsg) {
-    await ctx.telegram.deleteMessage(ctx.chat.id, statusMsg.message_id).catch(() => { });
-  }
-
-  // Clean up admin's input message
-  await ctx.telegram.deleteMessage(sourceChatId, messageId).catch(() => { });
-
-  const resultText =
-    `${ANIM.PARTY} <b>ការផ្ញើសារបានបញ្ចប់ (BROADCAST COMPLETED)!</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-👥 <b>ចំនួន Users ទាំងអស់:</b> <code>${total}</code> នាក់
-${ANIM.CHECK} <b>ផ្ញើជោគជ័យ:</b> <code>${sentCount}</code> នាក់
-${ANIM.WARN} <b>បរាជ័យ (Blocked/Deleted):</b> <code>${failedCount}</code> នាក់
-━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-  const reply_markup = {
-    inline_keyboard: [
-      [
-        {
-          text: 'ទៅកាន់ Menu ចម្បង',
-          callback_data: 'back_main',
-          icon_custom_emoji_id: BTN_ICONS.DIAMOND,
-          style: 'primary'
-        }
-      ]
-    ]
-  };
-
-  return showScreen(ctx, { text: resultText, reply_markup });
-}
+// NOTE: The old in-line broadcast helper was replaced by the full Announcement
+// System in admin_panel.js (broadcast to all / single user + delivery reports +
+// persistent history). Admin broadcast entry points now delegate to the panel.
 
 function getMainMenu(user) {
   const isUserAdmin = isAdmin(user.id);
@@ -484,13 +450,13 @@ ${ANIM.DOWN} <b>សូមជ្រើសរើសមុខងារដែលអ�
     ]
   ];
 
-  // If Admin (8730273904), show Admin Broadcast button
+  // Admin-only entry point to the full premium Admin Control Panel
   if (isUserAdmin) {
     keyboard.push([
       {
-        text: `📢 ផ្ញើសារទៅកាន់ Users ទាំងអស់ (${usersDb.size} នាក់)`,
-        callback_data: 'admin_broadcast_menu',
-        icon_custom_emoji_id: BTN_ICONS.MEGAPHONE,
+        text: `👑 ADMIN CONTROL PANEL`,
+        callback_data: 'ap_home',
+        icon_custom_emoji_id: BTN_ICONS.CROWN,
         style: 'success'
       }
     ]);
@@ -516,17 +482,23 @@ bot.use(async (ctx, next) => {
     getUser(userId, ctx.from?.first_name, ctx.from?.username);
   }
 
-  // Handle Admin Broadcast input (any message: text, photo, video, etc.)
-  if (userId && isAdmin(userId) && ctx.message) {
-    const userState = userStates.get(userId);
-    if (userState?.state === 'AWAITING_BROADCAST_MSG') {
-      if (ctx.message.text && ctx.message.text.startsWith('/')) {
-        userStates.delete(userId);
-        return next();
-      }
-      userStates.delete(userId);
-      return executeBroadcast(ctx, ctx.chat.id, ctx.message.message_id);
+  // Handle Admin Panel text/media input (announcement content, search queries).
+  // handleAdminMessage returns true ONLY for a verified admin in an admin input
+  // state; it internally re-checks isAdmin, so no bypass is possible here.
+  if (adminPanel && ctx.message) {
+    const handled = await adminPanel.handleAdminMessage(ctx);
+    if (handled) return;
+  }
+
+  // Maintenance Mode Gate: while the bot is CLOSED, block every normal-user
+  // action (messages AND callbacks) in private chats. Admins are exempt so the
+  // Admin Panel keeps working. Status is read from persistent storage.
+  if (ctx.chat?.type === 'private' && !isAdmin(userId) && store.isBotClosed()) {
+    if (ctx.callbackQuery) {
+      await ctx.answerCbQuery('⚠️ Bot is temporarily closed for maintenance.', { show_alert: true }).catch(() => { });
     }
+    if (adminPanel) return adminPanel.showClosedScreen(ctx);
+    return; // fail-closed: block if panel not ready
   }
 
   if (ctx.callbackQuery && ctx.callbackQuery.data === 'verify_joined') {
@@ -534,6 +506,9 @@ bot.use(async (ctx, next) => {
   }
 
   if (!userId) return next();
+
+  // Admins bypass the force-subscribe gate so the Admin Panel is always reachable
+  if (isAdmin(userId)) return next();
 
   if (ctx.chat?.type === 'private') {
     const check = await checkMembership(ctx, userId);
@@ -563,75 +538,24 @@ bot.start(async (ctx) => {
   return showScreen(ctx, { text, reply_markup, video });
 });
 
-// Admin Broadcast Command
+// Admin Broadcast Command -> opens the Announcement Center (Admin Panel)
 bot.command('broadcast', async (ctx) => {
-  if (!isAdmin(ctx.from.id)) return;
-  userStates.set(ctx.from.id, { state: 'AWAITING_BROADCAST_MSG' });
-
-  const totalUsers = usersDb.size;
-  const text =
-    `${ANIM.MEGAPHONE} <b>ផ្ញើសារទៅកាន់អ្នកប្រើប្រាស់ទាំងអស់ (BROADCAST)</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-👥 <b>ចំនួន Users ទាំងអស់:</b> <code>${totalUsers}</code> នាក់
-
-💬 <b>សូមផ្ញើសារដែលអ្នកចង់ផ្ញើទៅកាន់ Users ទាំងអស់៖</b>
-<i>(អាចផ្ញើជា Text, រូបភាព Photo, ឬ វីដេអូ Video ដោយមាន Caption ឬគ្មានក៏បាន)</i>
-
-${ANIM.BULB} <i>ប្រព័ន្ធនឹងធ្វើការផ្ញើសារនោះទៅកាន់ Users ទាំងអស់ដែលបាន Start Bot នេះ!</i>
-━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-  const reply_markup = {
-    inline_keyboard: [
-      [
-        {
-          text: 'បោះបង់ (Cancel)',
-          callback_data: 'back_main',
-          icon_custom_emoji_id: BTN_ICONS.CANCEL,
-          style: 'danger'
-        }
-      ]
-    ]
-  };
-
-  return showScreen(ctx, { text, reply_markup });
-});
-
-// Admin Broadcast Callback
-bot.action('admin_broadcast_menu', async (ctx) => {
+  await ctx.deleteMessage().catch(() => { });
   if (!isAdmin(ctx.from.id)) {
-    await ctx.answerCbQuery('⚠️ អ្នកមិនមានសិទ្ធិប្រើប្រាស់មុខងារនេះទេ!', { show_alert: true }).catch(() => { });
+    await ctx.replyWithHTML('⛔ <b>Access Denied. You are not authorized to use this panel.</b>').catch(() => { });
     return;
   }
+  if (adminPanel) return adminPanel.openAnnouncementMenu(ctx);
+});
 
-  userStates.set(ctx.from.id, { state: 'AWAITING_BROADCAST_MSG' });
-
-  const totalUsers = usersDb.size;
-  const text =
-    `${ANIM.MEGAPHONE} <b>ផ្ញើសារទៅកាន់អ្នកប្រើប្រាស់ទាំងអស់ (BROADCAST)</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-👥 <b>ចំនួន Users ទាំងអស់:</b> <code>${totalUsers}</code> នាក់
-
-💬 <b>សូមផ្ញើសារដែលអ្នកចង់ផ្ញើទៅកាន់ Users ទាំងអស់៖</b>
-<i>(អាចផ្ញើជា Text, រូបភាព Photo, ឬ វីដេអូ Video ដោយមាន Caption ឬគ្មានក៏បាន)</i>
-
-${ANIM.BULB} <i>ប្រព័ន្ធនឹងធ្វើការផ្ញើសារនោះទៅកាន់ Users ទាំងអស់ដែលបាន Start Bot នេះ!</i>
-━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-  const reply_markup = {
-    inline_keyboard: [
-      [
-        {
-          text: 'បោះបង់ (Cancel)',
-          callback_data: 'back_main',
-          icon_custom_emoji_id: BTN_ICONS.CANCEL,
-          style: 'danger'
-        }
-      ]
-    ]
-  };
-
+// Legacy broadcast callback -> delegates to the Announcement Center (re-auth)
+bot.action('admin_broadcast_menu', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) {
+    await ctx.answerCbQuery('⛔ Access Denied. You are not authorized to use this panel.', { show_alert: true }).catch(() => { });
+    return;
+  }
   await ctx.answerCbQuery().catch(() => { });
-  return showScreen(ctx, { text, reply_markup });
+  if (adminPanel) return adminPanel.openAnnouncementMenu(ctx);
 });
 
 // Quick Helper: /id command to get any Chat/Group ID easily
@@ -1252,6 +1176,7 @@ ${ANIM.REFRESH} <i>ប្រព័ន្ធកំពុងត្រួតពិ�
             price: tx.usdAmount,
             date: new Date().toLocaleDateString('km-KH')
           });
+          saveUsersToDisk(); // persist the credited balance
 
           // Save request for Admin to Add Funds
           topupRequests.set(tranId, {
@@ -1265,6 +1190,22 @@ ${ANIM.REFRESH} <i>ប្រព័ន្ធកំពុងត្រួតពិ�
             currency: tx.currency,
             chargeAmount: tx.chargeAmount,
             date: new Date().toLocaleString('km-KH', { timeZone: 'Asia/Phnom_Penh' })
+          });
+
+          // Persist to top-up history (status: paid = awaiting admin decision)
+          store.addTopup({
+            id: tranId,
+            userId: tx.userId,
+            chatId: tx.chatId,
+            name: user.name,
+            username: tx.username,
+            oneXBetId: tx.oneXBetId,
+            amountUsd: tx.usdAmount,
+            currency: tx.currency,
+            chargeAmount: tx.chargeAmount,
+            method: 'KHQR (Bakong)',
+            reference: tranId,
+            status: 'paid'
           });
 
           const paidAmtDesc = tx.currency === 'KHR'
@@ -1527,6 +1468,24 @@ bot.action(/verify_pay_(.+)/, async (ctx) => {
         price: creditedAmount,
         date: new Date().toLocaleDateString('km-KH')
       });
+      saveUsersToDisk(); // persist the credited balance
+      // Record this direct-credit top-up in history (credited immediately)
+      store.addTopup({
+        id: tx.tranId,
+        userId: tx.userId,
+        chatId: tx.chatId,
+        name: user.name,
+        username: tx.username,
+        oneXBetId: tx.oneXBetId,
+        amountUsd: creditedAmount,
+        currency: tx.currency,
+        chargeAmount: tx.chargeAmount,
+        method: 'KHQR (Bakong)',
+        reference: tx.tranId,
+        status: 'approved',
+        decidedBy: 'Auto (verified payment)',
+        decidedAt: new Date().toISOString()
+      });
 
       const paidAmtText = tx.currency === 'KHR'
         ? `+${tx.chargeAmount.toLocaleString()} ៛ KHR (+$${creditedAmount.toFixed(2)} USD)`
@@ -1608,6 +1567,14 @@ bot.action(/adm_td_(.+)/, async (ctx) => {
 
   await ctx.answerCbQuery('✅ បានកត់ត្រាការបញ្ចូលប្រាក់ជោគជ័យ!').catch(() => { });
 
+  // Update persistent top-up history -> approved
+  store.updateTopup(tranId, {
+    status: 'approved',
+    decidedBy: adminName,
+    decidedById: ctx.from.id,
+    decidedAt: new Date().toISOString()
+  });
+
   // Edit Admin message
   const adminText =
     `${ANIM.SUCCESS} <b>បានបញ្ចូលទឹកប្រាក់ជោគជ័យ (TOPUP COMPLETED)</b>
@@ -1668,6 +1635,15 @@ bot.action(/adm_tc_(.+)/, async (ctx) => {
   }
 
   await ctx.answerCbQuery('❌ បានបដិសេធសំណើ!').catch(() => { });
+
+  // Update persistent top-up history -> rejected
+  store.updateTopup(tranId, {
+    status: 'rejected',
+    decidedBy: adminName,
+    decidedById: ctx.from.id,
+    decidedAt: new Date().toISOString(),
+    rejectReason: 'Rejected by admin (Melbet ID not found / invalid)'
+  });
 
   // Edit Admin message
   const adminText =
@@ -1736,6 +1712,14 @@ bot.action(/adm_wd_(.+)/, async (ctx) => {
 
   await ctx.answerCbQuery('✅ បានកត់ត្រាការផ្ទេរប្រាក់ជោគជ័យ!').catch(() => { });
 
+  // Update persistent withdrawal history -> completed
+  store.updateWithdrawal(withdrawId, {
+    status: 'completed',
+    decidedBy: adminName,
+    decidedById: ctx.from.id,
+    decidedAt: new Date().toISOString()
+  });
+
   // Edit Admin message caption
   const adminCaption =
     `${ANIM.SUCCESS} <b>បានផ្ទេរប្រាក់រួចរាល់ (WITHDRAWAL COMPLETED)</b>
@@ -1794,6 +1778,15 @@ bot.action(/adm_wc_(.+)/, async (ctx) => {
   }
 
   await ctx.answerCbQuery('❌ បានបដិសេធសំណើដកប្រាក់!').catch(() => { });
+
+  // Update persistent withdrawal history -> rejected
+  store.updateWithdrawal(withdrawId, {
+    status: 'rejected',
+    decidedBy: adminName,
+    decidedById: ctx.from.id,
+    decidedAt: new Date().toISOString(),
+    rejectReason: 'Rejected by admin (invalid/not found code)'
+  });
 
   // Edit Admin message caption
   const adminCaption =
@@ -1930,6 +1923,19 @@ bot.on('photo', async (ctx) => {
       code,
       photoFileId,
       date: new Date().toLocaleString('km-KH', { timeZone: 'Asia/Phnom_Penh' })
+    });
+
+    // Persist to withdrawal history (status: pending = awaiting admin)
+    store.addWithdrawal({
+      id: withdrawId,
+      userId,
+      chatId: ctx.chat.id,
+      name: user.name,
+      username,
+      code,
+      photoFileId,
+      method: 'Melbet Withdrawal Code',
+      status: 'pending'
     });
 
     // 1. Tell user: please wait, admin is transferring money
@@ -2125,6 +2131,19 @@ ${ANIM.CAMERA} ឥឡូវ Send Qr មក Baby`;
   const user = getUser(userId, ctx.from.first_name);
   const { text, reply_markup, video } = getMainMenu(user);
   return showScreen(ctx, { text, reply_markup, video });
+});
+
+// ---------------- WIRE IN THE PREMIUM ADMIN PANEL ----------------
+// Registers all /admin, panel callbacks, announcement/maintenance/history
+// handlers. Every handler re-verifies isAdmin() internally.
+adminPanel = setupAdminPanel(bot, {
+  ANIM, BTN_ICONS,
+  isAdmin, ADMIN_ID, ADMIN_ID_VALID,
+  usersDb, getUser, saveUsersToDisk,
+  showScreen, userStates, userActiveMsgs,
+  getMainMenu, store,
+  EXCHANGE_RATE, SUPPORT_LINK, SUPPORT_USERNAME, STORE_NAME,
+  CHANNEL_USERNAME, CHANNEL_ID
 });
 
 // ---------------- START BOT ----------------
