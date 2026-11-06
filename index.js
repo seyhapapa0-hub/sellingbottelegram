@@ -1161,10 +1161,19 @@ ${ANIM.REFRESH} <i>ប្រព័ន្ធកំពុងត្រួតពិ�
         return;
       }
 
+      // Re-entrancy guard: the bank API call is async and can take longer than
+      // the 2.5s interval, so several ticks could overlap and each fire the
+      // success block -> duplicate admin notifications. Skip if a check is
+      // already in flight, or if this payment was already handled.
+      if (tx._checking || tx._handled) return;
+      tx._checking = true;
+
       try {
         const result = await checkPaymentStatus(tx.tranId, tx.md5);
 
         if (result.status === 'PAID' || result.paid === true || result.status === 'SUCCESS') {
+          if (tx._handled) return;       // another tick already processed it
+          tx._handled = true;            // set synchronously -> runs exactly once
           clearInterval(pollInterval);
           clearTimeout(tx.timerId);
           pendingTxs.delete(tranId);
@@ -1292,6 +1301,8 @@ ${ANIM.PIN} <i>សូម Admin បញ្ចូលប្រាក់ទៅកា�
         }
       } catch (e) {
         // Ignore background polling glitches
+      } finally {
+        if (tx) tx._checking = false; // release in-flight lock for the next tick
       }
     }, 2500);
 
