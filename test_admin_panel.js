@@ -117,14 +117,14 @@ async function fire(ctx, data) {
   // 1) Non-admin is denied on a protected action
   {
     const ctx = makeCtx(111, { data: 'ap_home' });
-    lastScreen = null;
+    lastScreen = null;                              
     await fire(ctx, 'ap_home');
     assert(ctx._alerts.some(a => /បដិសេធការចូល/.test(a)), 'non-admin should get Access Denied (Khmer)');
     assert(lastScreen === null, 'non-admin must not see the panel');
     ok('non-admin blocked from ap_home (Access Denied)');
   }
 
-  // 2) Admin opens the panel
+  // 2) Admin opens the panel                             
   {
     const ctx = makeCtx(999, { data: 'ap_home' });
     await fire(ctx, 'ap_home');
@@ -255,6 +255,37 @@ async function fire(ctx, data) {
     await fire(makeCtx(999, { data: 'ap_tpv_TX_HACK' }), 'ap_tpv_TX_HACK');
     assert(/&lt;script&gt;/.test(lastScreen.text) && !/<script>/.test(lastScreen.text), 'user content is HTML-escaped');
     ok('HTML escaping prevents injection in transaction details');
+  }
+
+  // 11) In-panel approve/reject buttons for PENDING transactions
+  {
+    // Pending top-up should surface Done/Cancel buttons on its detail page
+    store.addTopup({ id: 'TXP', userId: 111, chatId: 111, name: 'Alice', username: '@alice', oneXBetId: 'MBX', amountUsd: 7, currency: 'USD', chargeAmount: 7, status: 'paid' });
+    await fire(makeCtx(999, { data: 'ap_tpv_TXP' }), 'ap_tpv_TXP');
+    assert(/ap_tpok_TXP/.test(JSON.stringify(lastScreen.reply_markup)) && /ap_tpno_TXP/.test(JSON.stringify(lastScreen.reply_markup)), 'pending topup shows Done/Cancel buttons');
+
+    // Approving notifies the user and flips status -> approved
+    const ctxOk = makeCtx(999, { data: 'ap_tpok_TXP' });
+    let notified = null;
+    ctxOk.telegram.sendMessage = (toId, text) => { notified = { toId, text }; return Promise.resolve({ message_id: 5 }); };
+    await fire(ctxOk, 'ap_tpok_TXP');
+    assert(store.findTopup('TXP').status === 'approved', 'topup marked approved');
+    assert(notified && notified.toId === 111 && /SUCCESSFUL/.test(notified.text), 'user notified of approval to their chat id');
+    // After approval, detail no longer offers Done/Cancel
+    assert(!/ap_tpok_TXP/.test(JSON.stringify(lastScreen.reply_markup)), 'approved topup hides action buttons');
+
+    // Pending withdrawal -> reject path
+    store.addWithdrawal({ id: 'WDP', userId: 222, chatId: 222, name: 'Bob', username: '@bob', code: '9999', status: 'pending' });
+    await fire(makeCtx(999, { data: 'ap_wdv_WDP' }), 'ap_wdv_WDP');
+    assert(/ap_wdok_WDP/.test(JSON.stringify(lastScreen.reply_markup)) && /ap_wdno_WDP/.test(JSON.stringify(lastScreen.reply_markup)), 'pending withdraw shows Done/Cancel buttons');
+
+    const ctxNo = makeCtx(999, { data: 'ap_wdno_WDP' });
+    let wNotified = null;
+    ctxNo.telegram.sendMessage = (toId, text) => { wNotified = { toId, text }; return Promise.resolve({ message_id: 6 }); };
+    await fire(ctxNo, 'ap_wdno_WDP');
+    assert(store.findWithdrawal('WDP').status === 'rejected', 'withdraw marked rejected');
+    assert(wNotified && wNotified.toId === 222 && /FAILED/.test(wNotified.text), 'user notified of rejection to their chat id');
+    ok('in-panel Done/Cancel approve+reject for topup & withdraw (store-backed)');
   }
 
   console.log(`\nAll ${passed} admin-panel checks passed \u2705`);

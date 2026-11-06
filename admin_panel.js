@@ -82,6 +82,7 @@ function setupAdminPanel(bot, deps) {
     usersDb, getUser, saveUsersToDisk,
     showScreen, userStates, userActiveMsgs,
     getMainMenu, store,
+    topupRequests, withdrawRequests,
     EXCHANGE_RATE, SUPPORT_LINK, SUPPORT_USERNAME, STORE_NAME,
     CHANNEL_USERNAME, CHANNEL_ID
   } = deps;
@@ -862,6 +863,13 @@ function setupAdminPanel(bot, deps) {
     text += `${DIV}`;
 
     const reply_markup = { inline_keyboard: [] };
+    // Approve / reject actions for a PENDING top-up (status 'paid')
+    if (t.status === 'paid') {
+      reply_markup.inline_keyboard.push([
+        btn('✅ បញ្ចូលជោគជ័យ (Done)', `ap_tpok_${t.id}`, 'success', BTN_ICONS.SUCCESS),
+        btn('❌ បដិសេធ (Cancel)', `ap_tpno_${t.id}`, 'danger', BTN_ICONS.CANCEL)
+      ]);
+    }
     if (!expanded) {
       reply_markup.inline_keyboard.push([btn('📄 មើលបន្ថែម', `ap_tpmore_${t.id}`, 'success', BTN_ICONS.CHART)]);
     }
@@ -1007,6 +1015,13 @@ function setupAdminPanel(bot, deps) {
     text += `${DIV}`;
 
     const reply_markup = { inline_keyboard: [] };
+    // Approve / reject actions for a PENDING withdrawal
+    if (w.status === 'pending') {
+      reply_markup.inline_keyboard.push([
+        btn('✅ ផ្ទេររួចរាល់ (Done)', `ap_wdok_${w.id}`, 'success', BTN_ICONS.SUCCESS),
+        btn('❌ បដិសេធ (Cancel)', `ap_wdno_${w.id}`, 'danger', BTN_ICONS.CANCEL)
+      ]);
+    }
     if (w.photoFileId) {
       reply_markup.inline_keyboard.push([btn('🖼 មើលរូបភាពបញ្ជាក់ (QR)', `ap_wdphoto_${w.id}`, 'primary', BTN_ICONS.CAMERA)]);
     }
@@ -1077,6 +1092,80 @@ function setupAdminPanel(bot, deps) {
     rows.push([btn('🔙 ត្រឡប់ក្រោយ', 'ap_wdf_all_0', 'primary', BTN_ICONS.BACK)]);
     await showScreen(ctx, { text: t, reply_markup: { inline_keyboard: rows } });
     return true;
+  }
+
+  // =========================================================================
+  //  APPROVE / REJECT a pending transaction directly from the panel
+  //  Works from the persistent store (survives restarts) and also clears the
+  //  in-memory request map so the group buttons can't double-process.
+  // =========================================================================
+  function userBackMarkup() {
+    return { inline_keyboard: [[{ text: 'ទៅកាន់ Menu ចម្បង', callback_data: 'back_main', style: 'primary', icon_custom_emoji_id: BTN_ICONS.DIAMOND }]] };
+  }
+
+  async function decideTopup(ctx, id, approve) {
+    const t = store.findTopup(id);
+    if (!t) { await ack(ctx, '⚠️ រកមិនឃើញសំណើ!'); return showTopups(ctx, 'all', 0); }
+    if (t.status !== 'paid') { await ack(ctx, '⚠️ សំណើនេះបានដំណើរការរួចហើយ!'); return showTopupDetail(ctx, id, false); }
+
+    const adminName = ctx.from.first_name || 'Admin';
+    store.updateTopup(id, {
+      status: approve ? 'approved' : 'rejected',
+      decidedBy: adminName,
+      decidedById: ctx.from.id,
+      decidedAt: new Date().toISOString(),
+      rejectReason: approve ? '' : 'បដិសេធដោយអ្នកគ្រប់គ្រង (ផ្ទាំងគ្រប់គ្រង)'
+    });
+    if (topupRequests && topupRequests.delete) topupRequests.delete(String(id));
+
+    const amt = Number(t.amountUsd || 0).toFixed(2);
+    const userText = approve
+      ? `${ANIM.PARTY} <b>ការបញ្ចូលទឹកប្រាក់ទទួលបានជោគជ័យ (TOPUP SUCCESSFUL)!</b>\n${DIV}\n` +
+        `${ANIM.MELBET} <b>ID Melbet:</b> <code>${escapeHtml(t.oneXBetId || '-')}</code>\n` +
+        `${ANIM.MONEY} <b>ចំនួនទឹកប្រាក់:</b> <code>+$${amt} USD</code>\n` +
+        `${ANIM.RECEIPT} <b>លេខវិក្កយបត្រ:</b> <code>${escapeHtml(t.id)}</code>\n${DIV}\n` +
+        `${ANIM.SUCCESS} <i>Admin បានបញ្ចូលទឹកប្រាក់ទៅក្នុងគណនី Melbet របស់អ្នករួចរាល់ហើយ! សូមពិនិត្យមើលក្នុងគណនី Melbet របស់អ្នក។ អរគុណ!</i>`
+      : `${ANIM.WARN} <b>ការបញ្ចូលទឹកប្រាក់មិនជោគជ័យ (TOPUP FAILED)</b>\n${DIV}\n` +
+        `${ANIM.MELBET} <b>ID Melbet:</b> <code>${escapeHtml(t.oneXBetId || '-')}</code>\n` +
+        `${ANIM.MONEY} <b>ចំនួនទឹកប្រាក់:</b> <code>$${amt} USD</code>\n${DIV}\n` +
+        `${ANIM.CROSS} <i>ប្រព័ន្ធមិនអាចស្វែងរកលេខគណនី ID Melbet របស់អ្នកឃើញទេ! សូមពិនិត្យឡើងវិញ ឬទាក់ទង Admin៖</i>\n` +
+        `${ANIM.CHAT} ជំនួយ: ${SUPPORT_USERNAME} (${SUPPORT_LINK})`;
+    if (t.chatId) {
+      await ctx.telegram.sendMessage(t.chatId, userText, { parse_mode: 'HTML', reply_markup: userBackMarkup() }).catch(() => { });
+    }
+    await ack(ctx, approve ? '✅ អនុម័តជោគជ័យ!' : '❌ បានបដិសេធ!');
+    return showTopupDetail(ctx, id, false);
+  }
+
+  async function decideWithdraw(ctx, id, approve) {
+    const w = store.findWithdrawal(id);
+    if (!w) { await ack(ctx, '⚠️ រកមិនឃើញសំណើ!'); return showWithdrawals(ctx, 'all', 0); }
+    if (w.status !== 'pending') { await ack(ctx, '⚠️ សំណើនេះបានដំណើរការរួចហើយ!'); return showWithdrawDetail(ctx, id, false); }
+
+    const adminName = ctx.from.first_name || 'Admin';
+    store.updateWithdrawal(id, {
+      status: approve ? 'completed' : 'rejected',
+      decidedBy: adminName,
+      decidedById: ctx.from.id,
+      decidedAt: new Date().toISOString(),
+      rejectReason: approve ? '' : 'បដិសេធដោយអ្នកគ្រប់គ្រង (ផ្ទាំងគ្រប់គ្រង)'
+    });
+    if (withdrawRequests && withdrawRequests.delete) withdrawRequests.delete(String(id));
+
+    const userText = approve
+      ? `${ANIM.PARTY} <b>ការដកប្រាក់ទទួលបានជោគជ័យ (WITHDRAWAL SUCCESSFUL)!</b>\n${DIV}\n` +
+        `${ANIM.SHIELD} <b>Code:</b> <code>${escapeHtml(w.code || '-')}</code>\n` +
+        `${ANIM.RECEIPT} <b>Withdraw ID:</b> <code>${escapeHtml(w.id)}</code>\n${DIV}\n` +
+        `${ANIM.SUCCESS} <i>Admin បានផ្ទេរប្រាក់ចូលគណនីធនាគាររបស់អ្នករួចរាល់ហើយ! សូមពិនិត្យ Banking App របស់អ្នក។ អរគុណ!</i>`
+      : `${ANIM.WARN} <b>ការដកប្រាក់មិនជោគជ័យ (WITHDRAWAL FAILED)</b>\n${DIV}\n` +
+        `${ANIM.SHIELD} <b>Code:</b> <code>${escapeHtml(w.code || '-')}</code>\n${DIV}\n` +
+        `${ANIM.CROSS} <i>លេខកូដមិនត្រឹមត្រូវ ឬរកមិនឃើញក្នុងប្រព័ន្ធ Melbet ទេ! សូមពិនិត្យ និងព្យាយាមម្តងទៀត ឬទាក់ទង Admin៖</i>\n` +
+        `${ANIM.CHAT} ជំនួយ: ${SUPPORT_USERNAME} (${SUPPORT_LINK})`;
+    if (w.chatId) {
+      await ctx.telegram.sendMessage(w.chatId, userText, { parse_mode: 'HTML', reply_markup: userBackMarkup() }).catch(() => { });
+    }
+    await ack(ctx, approve ? '✅ ផ្ទេរជោគជ័យ!' : '❌ បានបដិសេធ!');
+    return showWithdrawDetail(ctx, id, false);
   }
 
   // =========================================================================
@@ -1231,6 +1320,8 @@ function setupAdminPanel(bot, deps) {
   bot.action('ap_tp_search', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return promptTopupSearch(ctx); });
   bot.action(/^ap_tpv_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return showTopupDetail(ctx, ctx.match[1], false); });
   bot.action(/^ap_tpmore_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return showTopupDetail(ctx, ctx.match[1], true); });
+  bot.action(/^ap_tpok_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; return decideTopup(ctx, ctx.match[1], true); });
+  bot.action(/^ap_tpno_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; return decideTopup(ctx, ctx.match[1], false); });
 
   // Withdraw history
   bot.action(/^ap_wdf_(all|pending|processing|completed|rejected|cancelled)_(\d+)$/, async (ctx) => {
@@ -1240,6 +1331,8 @@ function setupAdminPanel(bot, deps) {
   bot.action('ap_wd_search', async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return promptWithdrawSearch(ctx); });
   bot.action(/^ap_wdv_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return showWithdrawDetail(ctx, ctx.match[1], false); });
   bot.action(/^ap_wdmore_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; await ack(ctx); return showWithdrawDetail(ctx, ctx.match[1], true); });
+  bot.action(/^ap_wdok_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; return decideWithdraw(ctx, ctx.match[1], true); });
+  bot.action(/^ap_wdno_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; return decideWithdraw(ctx, ctx.match[1], false); });
   bot.action(/^ap_wdphoto_(.+)$/, async (ctx) => { if (!(await guardAction(ctx))) return; return showWithdrawPhoto(ctx, ctx.match[1]); });
 
   console.log(ADMIN_ID_VALID

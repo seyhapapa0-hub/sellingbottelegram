@@ -1557,7 +1557,14 @@ bot.action(/cancel_pay_(.+)/, async (ctx) => {
 // 1. Admin Top-Up: DONE
 bot.action(/adm_td_(.+)/, async (ctx) => {
   const tranId = ctx.match[1];
-  const req = topupRequests.get(tranId);
+  let req = topupRequests.get(tranId);
+  if (!req) {
+    // Fallback to persistent store (survives Render restarts / spin-downs)
+    const _t = store.findTopup(tranId);
+    if (_t && _t.status === 'paid') {
+      req = { userId: _t.userId, chatId: _t.chatId, name: _t.name, username: _t.username, oneXBetId: _t.oneXBetId, amount: Number(_t.amountUsd) || 0 };
+    }
+  }
   const adminName = ctx.from.first_name || 'Admin';
 
   if (!req) {
@@ -1626,7 +1633,14 @@ ${ANIM.SUCCESS} <i>Admin បានបញ្ចូលទឹកប្រាក់ 
 // 2. Admin Top-Up: CANCEL
 bot.action(/adm_tc_(.+)/, async (ctx) => {
   const tranId = ctx.match[1];
-  const req = topupRequests.get(tranId);
+  let req = topupRequests.get(tranId);
+  if (!req) {
+    // Fallback to persistent store (survives Render restarts / spin-downs)
+    const _t = store.findTopup(tranId);
+    if (_t && _t.status === 'paid') {
+      req = { userId: _t.userId, chatId: _t.chatId, name: _t.name, username: _t.username, oneXBetId: _t.oneXBetId, amount: Number(_t.amountUsd) || 0 };
+    }
+  }
   const adminName = ctx.from.first_name || 'Admin';
 
   if (!req) {
@@ -1702,7 +1716,14 @@ ${ANIM.CHAT} Support: ${SUPPORT_USERNAME} (${SUPPORT_LINK})`;
 // 3. Admin Withdrawal: DONE
 bot.action(/adm_wd_(.+)/, async (ctx) => {
   const withdrawId = ctx.match[1];
-  const req = withdrawRequests.get(withdrawId);
+  let req = withdrawRequests.get(withdrawId);
+  if (!req) {
+    // Fallback to persistent store (survives Render restarts / spin-downs)
+    const _w = store.findWithdrawal(withdrawId);
+    if (_w && _w.status === 'pending') {
+      req = { userId: _w.userId, chatId: _w.chatId, name: _w.name, username: _w.username, code: _w.code };
+    }
+  }
   const adminName = ctx.from.first_name || 'Admin';
 
   if (!req) {
@@ -1769,7 +1790,14 @@ ${ANIM.SUCCESS} <i>Admin បានផ្ទេរប្រាក់ចូលក�
 // 4. Admin Withdrawal: CANCEL
 bot.action(/adm_wc_(.+)/, async (ctx) => {
   const withdrawId = ctx.match[1];
-  const req = withdrawRequests.get(withdrawId);
+  let req = withdrawRequests.get(withdrawId);
+  if (!req) {
+    // Fallback to persistent store (survives Render restarts / spin-downs)
+    const _w = store.findWithdrawal(withdrawId);
+    if (_w && _w.status === 'pending') {
+      req = { userId: _w.userId, chatId: _w.chatId, name: _w.name, username: _w.username, code: _w.code };
+    }
+  }
   const adminName = ctx.from.first_name || 'Admin';
 
   if (!req) {
@@ -2142,6 +2170,7 @@ adminPanel = setupAdminPanel(bot, {
   usersDb, getUser, saveUsersToDisk,
   showScreen, userStates, userActiveMsgs,
   getMainMenu, store,
+  topupRequests, withdrawRequests,
   EXCHANGE_RATE, SUPPORT_LINK, SUPPORT_USERNAME, STORE_NAME,
   CHANNEL_USERNAME, CHANNEL_ID
 });
