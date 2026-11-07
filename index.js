@@ -49,9 +49,9 @@ const ADMIN_TOPUP_GROUP_ID = process.env.ADMIN_TOPUP_GROUP_ID || ADMIN_GROUP_ID;
 const ADMIN_WITHDRAW_GROUP_ID = process.env.ADMIN_WITHDRAW_GROUP_ID || ADMIN_GROUP_ID;
 
 // PayLinkAPI Configuration
-const PAYLINK_BASE_URL = process.env.PAYLINK_BASE_URL || 'https://paylinkapi-bot.onrender.com';
-const PAYLINK_API_KEY = process.env.PAYLINK_API_KEY || 'plk_live_std_d0b420ff88ca';
-const PAYLINK_SECRET = process.env.PAYLINK_SECRET || 'whsec_5bad6c5e8bf502f1';
+const PAYLINK_BASE_URL = (process.env.PAYLINK_BASE_URL || 'https://paylinkapibank.com/api/v2').replace(/\/+$/, '');
+const PAYLINK_API_KEY = process.env.PAYLINK_API_KEY || 'plk_live_std_8399c0af9d891e80f3ad4bb3eccc1cec6ce7';
+const PAYLINK_SECRET = process.env.PAYLINK_SECRET || 'whsec_8c34c96faf66956e31da0177cfcce27aa7553b113fb540dc7902087e6d669715';
 const STORE_NAME = process.env.STORE_NAME || 'PAY8BET168';
 const EXCHANGE_RATE = parseInt(process.env.EXCHANGE_RATE, 10) || 4100;
 
@@ -299,8 +299,19 @@ async function showScreen(ctx, { text, reply_markup, photo = null, video = null,
 
 // ---------------- PAYLINKAPI PAYMENT FUNCTIONS ----------------
 
+function getPaylinkEndpoint(subpath) {
+  const base = PAYLINK_BASE_URL.replace(/\/+$/, '');
+  let path = subpath.startsWith('/') ? subpath : `/${subpath}`;
+  if ((base.endsWith('/api/v2') || base.endsWith('/api')) && path.startsWith('/api/')) {
+    path = path.slice(4);
+  } else if (!base.endsWith('/api') && !base.endsWith('/api/v2') && !path.startsWith('/api/')) {
+    path = `/api${path}`;
+  }
+  return `${base}${path}`;
+}
+
 async function generateKHQR(amount, currency = 'USD') {
-  const url = `${PAYLINK_BASE_URL}/api/aba/generate-qr`;
+  const url = getPaylinkEndpoint('/aba/generate-qr');
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -320,7 +331,7 @@ async function generateKHQR(amount, currency = 'USD') {
 }
 
 async function checkPaymentStatus(tranId, md5) {
-  const url = `${PAYLINK_BASE_URL}/api/web/check-payment`;
+  const url = getPaylinkEndpoint('/web/check-payment');
   const response = await fetch(url, {
     method: 'POST',
     headers: {
